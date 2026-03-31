@@ -1,21 +1,28 @@
-import { getValidToken, parseCookies } from './auth/status.js';
+import { getValidToken } from './auth/status.js';
 
 export const config = { maxDuration: 30 };
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-
   try {
     const { token, newCookies } = await getValidToken(req);
     if (newCookies) res.setHeader('Set-Cookie', newCookies);
     if (!token) return res.status(401).json({ error: 'Not authenticated' });
 
-    const siteUrl = req.query.site || 'https://www.cchairandbeauty.com';
+    // Domain property uses sc-domain: prefix
+    // URL prefix property uses the full URL
+    // We try domain property first, fall back to URL prefix
+    const rawSite = req.query.site || 'cchairandbeauty.com';
+    
+    // Strip protocol/www to get bare domain
+    const domain = rawSite.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+    
+    // Try sc-domain: format first (domain property)
+    const siteUrl = `sc-domain:${domain}`;
+
     const endDate = new Date().toISOString().split('T')[0];
     const startDate = new Date(Date.now() - 28 * 24 * 3600 * 1000).toISOString().split('T')[0];
     const last7Start = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString().split('T')[0];
 
-    // Fetch queries (last 28 days for trends)
     const [queriesRes, chartRes] = await Promise.all([
       fetch(`https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`, {
         method: 'POST',
@@ -44,14 +51,12 @@ export default async function handler(req, res) {
     if (queriesData.error) throw new Error(queriesData.error.message);
 
     const rows = queriesData.rows || [];
-
-    // Calculate totals from last 7 days chart
     const chartRows = chartData.rows || [];
+    
     const totalClicks = chartRows.reduce((s, r) => s + (r.clicks || 0), 0);
     const totalImpressions = chartRows.reduce((s, r) => s + (r.impressions || 0), 0);
     const avgPosition = chartRows.length ? chartRows.reduce((s, r) => s + (r.position || 0), 0) / chartRows.length : 0;
 
-    // Process queries for opportunities
     const queries = rows.map(r => ({
       query: r.keys[0],
       clicks: r.clicks,
@@ -77,6 +82,7 @@ export default async function handler(req, res) {
     res.json({
       totalClicks, totalImpressions, avgPosition,
       lowCTR, nearPage1, topByClicks,
+      siteUrl,
       dateRange: { startDate, endDate },
     });
 
