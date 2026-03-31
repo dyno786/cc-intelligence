@@ -459,7 +459,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
     </div>
     <div class="form-grp">
       <label class="form-lbl">Google Search Console Site URL</label>
-      <input class="form-inp" type="text" id="s-site" value="https://www.cchairandbeauty.com">
+      <input class="form-inp" type="text" id="s-site" value="cchairandbeauty.com">
       <div class="form-hint">Exact URL as it appears in Search Console.</div>
     </div>
     <div class="form-grp">
@@ -499,7 +499,7 @@ function cfg(){return{
   shop:localStorage.getItem('cc_shop')||'cchairandbeauty.myshopify.com',
   token:localStorage.getItem('cc_token')||'',
   budget:localStorage.getItem('cc_budget')||'3500',
-  site:localStorage.getItem('cc_site')||'https://www.cchairandbeauty.com',
+  site:localStorage.getItem('cc_site')||'cchairandbeauty.com',
   ga4:localStorage.getItem('cc_ga4')||'403507004',
   adsId:localStorage.getItem('cc_ads_id')||'7490010943',
 };}
@@ -1296,7 +1296,7 @@ async function dbgSC(){
     if(d.lowCTR&&d.lowCTR[0])dlog('Top: "'+d.lowCTR[0].query+'" '+d.lowCTR[0].impressions+' impr '+d.lowCTR[0].ctr.toFixed(1)+'% CTR','info');
   }catch(e){
     setDbg('sc','fail');dlog('✗ Failed: '+e.message,'err');
-    dlog('→ Log in with cchairnbeauty@gmail.com (owns the SC property)','warn');
+    dlog('→ Property is Domain type: sc-domain:cchairandbeauty.com','warn');
     dlog('→ Check SC API enabled in Google Cloud','warn');
   }
   dbgUpdateSummary();
