@@ -3,6 +3,9 @@ import { getValidToken } from './auth/status.js';
 export const config = { maxDuration: 30 };
 
 export default async function handler(req, res) {
+  // Prevent caching
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  
   try {
     const { token, newCookies } = await getValidToken(req);
     if (newCookies) res.setHeader('Set-Cookie', newCookies);
@@ -16,18 +19,22 @@ export default async function handler(req, res) {
       });
     }
 
-    const managerCustomerId = '7490010943';
-    const clientCustomerId = (req.query.customerId || '3934493272').replace(/-/g, '');
+    // IMPORTANT: URL uses client account, header uses manager account
+    const managerCustomerId = '7490010943';  // 749-001-0943 Manager
+    const clientCustomerId = '3934493272';   // 393-449-3272 Regular account
 
     const query = `SELECT campaign.name, campaign.status, metrics.cost_micros, metrics.clicks, metrics.impressions, metrics.conversions, metrics.conversions_value, metrics.ctr, metrics.average_cpc FROM campaign WHERE segments.date DURING LAST_30_DAYS AND campaign.status = 'ENABLED' ORDER BY metrics.cost_micros DESC LIMIT 20`;
+
+    console.log('Calling Google Ads API for customer:', clientCustomerId, 'via manager:', managerCustomerId);
 
     const r = await fetch(`https://googleads.googleapis.com/v17/customers/${clientCustomerId}/googleAds:search`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${token}`,
+        'Authorization': `Bearer ${token}`,
         'developer-token': devToken,
         'Content-Type': 'application/json',
         'login-customer-id': managerCustomerId,
+        'Cache-Control': 'no-cache',
       },
       body: JSON.stringify({ query }),
     });
@@ -35,28 +42,26 @@ export default async function handler(req, res) {
     const rawText = await r.text();
     const contentType = r.headers.get('content-type') || '';
 
-    // Log full response for debugging
-    console.error('Google Ads response status:', r.status);
-    console.error('Google Ads content-type:', contentType);
-    console.error('Google Ads raw response:', rawText.substring(0, 1000));
+    console.log('Google Ads status:', r.status, 'content-type:', contentType);
+    console.log('Google Ads response preview:', rawText.substring(0, 500));
 
     if (contentType.includes('text/html') || rawText.trim().startsWith('<!')) {
-      // Return 200 so browser can see the error details
       return res.json({
         campaigns: [], totalSpend: 0, totalClicks: 0, totalConv: 0,
-        debugError: 'HTML response from Google Ads API',
+        debugError: 'HTML response',
         httpStatus: r.status,
-        contentType,
-        preview: rawText.substring(0, 800),
-        note: 'Google returned HTML instead of JSON - see preview for details',
+        preview: rawText.substring(0, 500),
       });
     }
 
     let data;
     try { data = JSON.parse(rawText); }
-    catch(e) { return res.status(500).json({ error: 'Parse error', raw: rawText.substring(0, 300) }); }
+    catch(e) { return res.status(500).json({ error: 'Parse error: ' + rawText.substring(0, 200) }); }
 
-    if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+    if (data.error) {
+      console.error('Google Ads API error:', JSON.stringify(data.error));
+      throw new Error(data.error.message || JSON.stringify(data.error));
+    }
 
     const campaigns = (data.results || []).map(row => {
       const c = row.campaign;
