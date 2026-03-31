@@ -35,17 +35,22 @@ export default async function handler(req, res) {
     const rawText = await r.text();
     const contentType = r.headers.get('content-type') || '';
 
+    // Log full response for debugging
+    console.error('Google Ads response status:', r.status);
+    console.error('Google Ads content-type:', contentType);
+    console.error('Google Ads raw response:', rawText.substring(0, 1000));
+
     if (contentType.includes('text/html') || rawText.trim().startsWith('<!')) {
-      console.error('Google Ads returned HTML:', rawText.substring(0, 300));
       return res.status(500).json({
-        error: 'Google Ads API auth issue. Make sure you reconnected Google with cchairnbeauty@gmail.com and the Manager Account (749-001-0943) has the developer token.',
-        rawPreview: rawText.substring(0, 200),
+        error: 'Google Ads returned HTML page',
+        status: r.status,
+        preview: rawText.substring(0, 500),
       });
     }
 
     let data;
     try { data = JSON.parse(rawText); }
-    catch(e) { return res.status(500).json({ error: 'Parse error: ' + rawText.substring(0, 200) }); }
+    catch(e) { return res.status(500).json({ error: 'Parse error', raw: rawText.substring(0, 300) }); }
 
     if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
 
