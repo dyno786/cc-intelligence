@@ -51,10 +51,11 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
 .conn-bar-right{margin-left:auto;display:flex;gap:8px}
 
 /* TABS */
-.tab-bar{display:flex;background:var(--card);border-radius:var(--r2);box-shadow:var(--shadow);margin-bottom:20px;overflow:hidden;border:1px solid var(--border)}
-.tab-btn{flex:1;padding:13px 10px;font-size:13px;font-weight:600;color:var(--ink3);border:none;background:none;cursor:pointer;font-family:inherit;transition:all .2s;border-right:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:6px}
+.tab-bar{display:flex;background:var(--card);border-radius:var(--r2);box-shadow:var(--shadow);margin-bottom:20px;border:1px solid var(--border);overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.tab-bar::-webkit-scrollbar{display:none}
+.tab-btn{flex-shrink:0;padding:12px 16px;font-size:12px;font-weight:600;color:var(--ink3);border:none;background:none;cursor:pointer;font-family:inherit;transition:all .2s;border-right:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap;min-width:90px}
 .tab-btn:last-child{border-right:none}
-.tab-btn.active{color:var(--teal);background:var(--teal-light)}
+.tab-btn.active{color:var(--teal);background:var(--teal-light);border-bottom:2px solid var(--teal)}
 .screen{display:none}.screen.active{display:block}
 
 /* CONNECT SCREEN */
@@ -213,18 +214,17 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
 .week-hdr-score .lbl{font-size:11px;color:rgba(255,255,255,.75);margin-top:2px}
 
 @media(max-width:768px){
-  .metrics-row,.insights-grid,.live-grid{grid-template-columns:1fr 1fr}
+  .metrics-row{grid-template-columns:1fr 1fr}
+  .insights-grid,.live-grid{grid-template-columns:1fr 1fr}
   .page{padding:16px 12px}
   .week-hdr{flex-direction:column}
-  .tab-bar{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch}
-  .tab-btn{min-width:80px;flex-shrink:0;font-size:11px;padding:10px 8px}
-  .tab-btn span{font-size:10px}
+  .tab-btn{min-width:80px;padding:10px 10px;font-size:11px}
 }
 @media(max-width:480px){
-  .metrics-row{grid-template-columns:1fr 1fr}
-  .insights-grid,.live-grid{grid-template-columns:1fr}
-  .hdr-r .btn-ghost:not(#refreshBtn){display:none}
-  .tab-btn{min-width:70px;padding:8px 6px}
+  .metrics-row,.insights-grid{grid-template-columns:1fr 1fr}
+  .live-grid{grid-template-columns:1fr}
+  .hdr-r a.btn-ghost{display:none}
+  .tab-btn{min-width:70px;padding:8px 8px;font-size:10px}
 }
 </style>
 </head>
@@ -278,6 +278,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
     <div class="conn-item" id="conn-shopify"><div class="conn-dot"></div>Shopify</div>
     <div class="conn-bar-right">
       <div style="font-size:11px;color:var(--ink3)" id="last-refresh">Never refreshed</div>
+      <button onclick="refreshAll()" style="background:var(--teal-light);color:var(--teal);border:1px solid var(--teal);border-radius:8px;padding:4px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">↻ Refresh</button>
     </div>
   </div>
 
@@ -296,6 +297,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
   <!-- OVERVIEW TAB -->
   <div class="screen active" id="screen-overview">
     <div id="overview-loading" class="loading-state"><div class="spin"></div><p>Loading live data...</p></div>
+    <div id="overview-error" style="display:none;background:var(--red-bg);border:1px solid var(--red);border-radius:var(--r2);padding:12px 16px;margin:10px 0;font-size:12px;color:var(--red)"></div>
     <div id="overview-content" style="display:none">
       <div class="week-hdr">
         <div class="week-hdr-left">
