@@ -1,64 +1,78 @@
 export const config = { maxDuration: 30 };
 
 export default async function handler(req, res) {
-  const placesKey = process.env.GOOGLE_PLACES_API_KEY || '';
+  const { domain, token } = req.query;
+  if (!token || !domain) return res.status(400).json({ error: 'Missing domain or token' });
 
-  if (!placesKey) {
-    return res.json({ error: 'GOOGLE_PLACES_API_KEY not set', competitors: [], mapPack: [] });
-  }
-
-  // Cache: only fetch once per day (stored in response headers concept)
-  const queries = [
-    { term: 'hair shop Leeds', monthly: 1200 },
-    { term: 'afro hair products Leeds', monthly: 480 },
-    { term: 'hair relaxer Leeds', monthly: 210 },
-    { term: 'hair extensions Leeds', monthly: 890 },
-    { term: 'black hair shop Leeds', monthly: 320 },
-  ];
-
-  // CC Hair & Beauty branch coordinates (Chapeltown as primary)
-  const lat = 53.8189, lng = -1.5299;
+  const base = `https://${domain}/admin/api/2024-01`;
+  const headers = { 'X-Shopify-Access-Token': token, 'Content-Type': 'application/json' };
 
   try {
-    // Fetch nearby competitors once
-    const nearbyUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=5000&type=beauty_salon&keyword=hair+beauty+afro&key=${placesKey}`;
-    const nearbyR = await fetch(nearbyUrl);
-    const nearbyData = await nearbyR.json();
+    const now = new Date();
+    
+    // This week: Mon to now
+    const thisMonday = new Date(now);
+    thisMonday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+    thisMonday.setHours(0, 0, 0, 0);
 
-    const competitors = (nearbyData.results || [])
-      .filter(p => !p.name.toLowerCase().includes('cc hair'))
-      .slice(0, 8)
-      .map(p => ({
-        name: p.name,
-        address: p.vicinity,
-        rating: p.rating || 0,
-        reviewCount: p.user_ratings_total || 0,
-        placeId: p.place_id,
-        lat: p.geometry?.location?.lat,
-        lng: p.geometry?.location?.lng,
-      }));
+    // Last week: Mon to Sun
+    const lastMonday = new Date(thisMonday);
+    lastMonday.setDate(thisMonday.getDate() - 7);
+    const lastSunday = new Date(thisMonday);
+    lastSunday.setMilliseconds(-1);
 
-    // Fetch map pack results for each query
-    const mapPack = [];
-    for (const q of queries.slice(0, 3)) {
-      const searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(q.term)}&location=${lat},${lng}&radius=10000&key=${placesKey}`;
-      const sr = await fetch(searchUrl);
-      const sd = await sr.json();
-      const results = (sd.results || []).slice(0, 3).map((p, i) => ({
-        position: i + 1,
-        name: p.name,
-        rating: p.rating || 0,
-        reviews: p.user_ratings_total || 0,
-        isYou: p.name.toLowerCase().includes('cc hair'),
-      }));
-      const youInPack = results.some(r => r.isYou);
-      mapPack.push({ query: q.term, monthly: q.monthly, results, youInPack });
+    const [thisWeekR, lastWeekR] = await Promise.all([
+      fetch(`${base}/orders.json?status=any&created_at_min=${thisMonday.toISOString()}&limit=250`, { headers }),
+      fetch(`${base}/orders.json?status=any&created_at_min=${lastMonday.toISOString()}&created_at_max=${lastSunday.toISOString()}&limit=250`, { headers }),
+    ]);
+
+    const [thisWeekData, lastWeekData] = await Promise.all([thisWeekR.json(), lastWeekR.json()]);
+
+    function aggregateProducts(orders) {
+      const map = {};
+      for (const order of (orders.orders || [])) {
+        if (order.financial_status === 'voided') continue;
+        for (const item of (order.line_items || [])) {
+          const id = item.product_id;
+          if (!map[id]) map[id] = { id, title: item.title, quantity: 0, revenue: 0, image: null };
+          map[id].quantity += item.quantity;
+          map[id].revenue += parseFloat(item.price) * item.quantity;
+        }
+      }
+      return Object.values(map).sort((a, b) => b.quantity - a.quantity).slice(0, 10);
     }
 
-    res.json({ competitors, mapPack, cached: new Date().toISOString() });
+    const thisWeekProducts = aggregateProducts(thisWeekData);
+    const lastWeekProducts = aggregateProducts(lastWeekData);
+
+    // Build comparison
+    const lastWeekMap = {};
+    lastWeekProducts.forEach(p => { lastWeekMap[p.id] = p; });
+
+    const comparison = thisWeekProducts.map(p => {
+      const last = lastWeekMap[p.id];
+      const lastQty = last ? last.quantity : 0;
+      const diff = p.quantity - lastQty;
+      const trend = diff > 0 ? 'up' : diff < 0 ? 'down' : lastQty === 0 ? 'new' : 'same';
+      return { ...p, lastQty, diff, trend };
+    });
+
+    // Revenue comparison
+    const thisRevenue = (thisWeekData.orders || []).reduce((s, o) => s + parseFloat(o.total_price || 0), 0);
+    const lastRevenue = (lastWeekData.orders || []).reduce((s, o) => s + parseFloat(o.total_price || 0), 0);
+    const thisOrders = (thisWeekData.orders || []).length;
+    const lastOrders = (lastWeekData.orders || []).length;
+
+    res.json({
+      thisWeek: { revenue: thisRevenue, orders: thisOrders, products: thisWeekProducts },
+      lastWeek: { revenue: lastRevenue, orders: lastOrders, products: lastWeekProducts },
+      comparison,
+      revenueDiff: thisRevenue - lastRevenue,
+      revenueChange: lastRevenue > 0 ? ((thisRevenue - lastRevenue) / lastRevenue * 100) : 0,
+    });
 
   } catch (err) {
-    console.error('Competitors error:', err.message);
+    console.error('Shopify compare error:', err.message);
     res.status(500).json({ error: err.message });
   }
 }
