@@ -704,19 +704,37 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
 
     <!-- ── PRODUCT BLOG ── -->
     <div class="studio-screen active" id="ss-product">
-      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);margin-bottom:8px" id="studio-sug-label">Suggested Today</div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px" id="studio-sug-grid"><div style="text-align:center;padding:20px;color:var(--ink3);grid-column:1/-1"><div class="spin" style="width:24px;height:24px;border-width:3px;margin:0 auto 8px"></div></div></div>
-      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);margin-bottom:8px">All Products</div>
-      <div style="position:relative;margin-bottom:10px">
-        <span style="position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--ink3);pointer-events:none">🔍</span>
-        <input style="width:100%;padding:11px 14px 11px 38px;background:var(--card);border:2px solid var(--border2);border-radius:var(--r2);font-size:14px;font-family:inherit;color:var(--ink);outline:none;box-shadow:var(--shadow)" type="text" placeholder="Search products…" oninput="studioFilterProds(this.value)" onfocus="this.style.borderColor='var(--teal)'" onblur="this.style.borderColor='var(--border2)'">
+
+      <!-- Smart suggestion tabs -->
+      <div style="display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px">
+        <button class="studio-pill active" id="spt-sellers" onclick="studioSugTab('sellers',this)">🔥 Top Sellers</button>
+        <button class="studio-pill" id="spt-keywords" onclick="studioSugTab('keywords',this)">🔍 Trending Keywords</button>
+        <button class="studio-pill" id="spt-highview" onclick="studioSugTab('highview',this)">👁 High Visit No Buy</button>
+        <button class="studio-pill" id="spt-new" onclick="studioSugTab('new',this)">✨ New This Week</button>
+        <button class="studio-pill" id="spt-all" onclick="studioSugTab('all',this)">📦 All Products</button>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;max-height:240px;overflow-y:auto;margin-bottom:10px" id="studio-prod-grid"></div>
-      <div style="text-align:center;margin-bottom:16px"><button class="copy-btn-dk" onclick="studioLoadMore()">Load more ↓</button></div>
+
+      <!-- Suggestion grid — changes based on tab -->
+      <div id="studio-sug-grid" style="margin-bottom:16px"></div>
+
+      <!-- Keyword-matched products (shows under Trending Keywords tab) -->
+      <div id="studio-kw-matches" style="display:none;margin-bottom:14px"></div>
+
+      <!-- Search (visible on All Products tab) -->
+      <div id="studio-search-row" style="display:none;margin-bottom:10px">
+        <div style="position:relative">
+          <span style="position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--ink3);pointer-events:none">🔍</span>
+          <input style="width:100%;padding:11px 14px 11px 38px;background:var(--card);border:2px solid var(--border2);border-radius:var(--r2);font-size:14px;font-family:inherit;color:var(--ink);outline:none;box-shadow:var(--shadow)" type="text" placeholder="Search products…" oninput="studioFilterProds(this.value)" onfocus="this.style.borderColor='var(--teal)'" onblur="this.style.borderColor='var(--border2)'">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;max-height:240px;overflow-y:auto;margin-bottom:10px;display:none" id="studio-prod-grid"></div>
+      <div style="text-align:center;margin-bottom:16px;display:none" id="studio-load-more-btn"><button class="copy-btn-dk" onclick="studioLoadMore()">Load more ↓</button></div>
+
       <div style="display:flex;gap:8px;margin-bottom:18px">
         <input class="form-inp" type="text" id="studio-url-inp" placeholder="Or paste product URL…">
         <button class="copy-btn-dk" onclick="studioLoadUrl()" style="white-space:nowrap">Load</button>
       </div>
+
       <div id="studio-sel-bar" style="display:none;background:var(--card);border:2px solid var(--teal);border-radius:var(--r2);padding:14px 16px;align-items:center;gap:14px;margin-bottom:14px;box-shadow:var(--shadow2)">
         <img id="studio-sel-img" src="" alt="" style="width:50px;height:50px;border-radius:10px;object-fit:cover;flex-shrink:0;display:none">
         <div style="width:50px;height:50px;border-radius:10px;background:var(--teal-light);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0" id="studio-sel-ph">✂</div>
@@ -725,7 +743,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
       </div>
       <button id="studio-prod-btn" onclick="studioGenProduct()" style="display:none;width:100%;background:var(--teal);color:#fff;border:none;border-radius:var(--r2);padding:16px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;flex-direction:column;align-items:center;margin-bottom:12px">
         Generate Today's Content
-        <span style="font-size:12px;font-weight:400;opacity:.8;margin-top:3px">Blog · 3 GBP posts · Instagram · Facebook · Review request · ~30 sec</span>
+        <span style="font-size:12px;font-weight:400;opacity:.8;margin-top:3px">Blog · 3 GBP posts · Instagram · Facebook · Review request · AI images · ~30 sec</span>
       </button>
       <div id="studio-prod-loading" style="display:none;text-align:center;padding:40px;background:var(--card);border-radius:var(--r2);box-shadow:var(--shadow);margin-bottom:12px">
         <div class="spin" style="margin:0 auto 16px"></div>
@@ -740,7 +758,12 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
       <div class="ai-card" style="margin-bottom:14px">
         <div class="ai-card-hdr"><h3>🔍 Write a Blog from a Keyword</h3></div>
         <div style="padding:16px">
-          <div class="form-grp"><label class="form-lbl">Target Keyword *</label><input class="form-inp" type="text" id="sk-keyword" placeholder="e.g. cherish french curl braid, edge control natural hair"><div class="form-hint">This becomes your H1, meta title and primary keyword to rank for in Google</div></div>
+          <div class="form-grp"><label class="form-lbl">Target Keyword *</label><input class="form-inp" type="text" id="sk-keyword" placeholder="e.g. cherish french curl braid, edge control natural hair" oninput="studioMatchKeyword(this.value)"><div class="form-hint">This becomes your H1, meta title and primary keyword to rank for in Google</div></div>
+          <!-- Matched products from catalogue -->
+          <div id="sk-matched-products" style="display:none;margin-bottom:12px">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--teal);margin-bottom:7px">🎯 Products we stock matching this keyword — will be linked in the blog</div>
+            <div id="sk-matched-list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+          </div>
           <div class="form-grp"><label class="form-lbl">Blog Type</label><div style="display:flex;gap:7px;flex-wrap:wrap" id="sk-type-pills"><button class="studio-pill active" data-val="how-to" onclick="studioSetPill(this,'sk-type-pills')">How-To Guide</button><button class="studio-pill" data-val="buying-guide" onclick="studioSetPill(this,'sk-type-pills')">Buying Guide</button><button class="studio-pill" data-val="top-tips" onclick="studioSetPill(this,'sk-type-pills')">Top Tips</button><button class="studio-pill" data-val="product-review" onclick="studioSetPill(this,'sk-type-pills')">Product Review</button><button class="studio-pill" data-val="comparison" onclick="studioSetPill(this,'sk-type-pills')">Comparison</button><button class="studio-pill" data-val="local-guide" onclick="studioSetPill(this,'sk-type-pills')">Leeds Local</button></div></div>
           <div class="form-grp"><label class="form-lbl">Related Product (optional)</label><input class="form-inp" type="text" id="sk-product" placeholder="e.g. Cherish Spiral Curl 22&quot; — leave blank for general blog"></div>
           <div class="form-grp"><label class="form-lbl">Search Console Context (optional)</label><input class="form-inp" type="text" id="sk-context" placeholder="e.g. 1,519 impressions, position 7.6, 1.18% CTR — paste from Keywords tab above"></div>
@@ -754,15 +777,55 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
 
     <!-- ── COLLECTION ── -->
     <div class="studio-screen" id="ss-collection">
-      <div class="ai-card" style="margin-bottom:14px">
-        <div class="ai-card-hdr"><h3>📦 Collection / Category Page Content</h3></div>
-        <div style="padding:16px">
-          <div class="form-grp"><label class="form-lbl">Collection Name *</label><input class="form-inp" type="text" id="sc-name" placeholder="e.g. Relaxers, Synthetic Wigs, Hair Extensions, Edge Control"></div>
-          <div class="form-grp"><label class="form-lbl">Content Focus</label><div style="display:flex;gap:7px;flex-wrap:wrap" id="sc-focus-pills"><button class="studio-pill active" data-val="seo-description" onclick="studioSetPill(this,'sc-focus-pills')">SEO Description</button><button class="studio-pill" data-val="seasonal-promo" onclick="studioSetPill(this,'sc-focus-pills')">Seasonal Promo</button><button class="studio-pill" data-val="new-arrivals" onclick="studioSetPill(this,'sc-focus-pills')">New Arrivals</button><button class="studio-pill" data-val="brand-spotlight" onclick="studioSetPill(this,'sc-focus-pills')">Brand Spotlight</button></div></div>
-          <button onclick="studioGenCollection()" style="width:100%;background:var(--teal);color:#fff;border:none;border-radius:var(--r2);padding:15px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">Generate Collection Content<div style="font-size:11px;font-weight:400;opacity:.8;margin-top:3px">SEO description · meta · GBP posts · Instagram · Facebook · ~20 sec</div></button>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-size:15px;font-weight:700;color:var(--ink)">📦 Collection / Category Pages</div>
+          <div style="font-size:12px;color:var(--ink3);margin-top:3px">Click any collection to generate SEO description, meta, GBP posts and social content</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="copy-btn-dk" onclick="studioLoadCollections()">↻ Load Collections</button>
         </div>
       </div>
-      <div id="sc-loading" style="display:none;text-align:center;padding:40px;background:var(--card);border-radius:var(--r2);box-shadow:var(--shadow)"><div class="spin" style="margin:0 auto 16px"></div><div style="font-size:16px;font-weight:700">Writing collection content…</div></div>
+
+      <!-- Collections grid with SEO status -->
+      <div id="sc-collections-grid" style="margin-bottom:14px">
+        <div style="text-align:center;padding:32px;color:var(--ink3);background:var(--card);border-radius:var(--r2);border:2px dashed var(--border2)">
+          <div style="font-size:24px;margin-bottom:8px">📦</div>
+          <div style="font-size:14px;font-weight:600;margin-bottom:4px">Load your Shopify collections</div>
+          <div style="font-size:12px;margin-bottom:14px">See which collections need SEO content written</div>
+          <button onclick="studioLoadCollections()" style="background:var(--teal);color:#fff;border:none;border-radius:var(--r);padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Load Collections →</button>
+        </div>
+      </div>
+
+      <!-- Or type manually -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+        <span style="font-size:11px;color:var(--ink3);white-space:nowrap">or type collection name manually</span>
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+      </div>
+
+      <div class="form-grp">
+        <label class="form-lbl">Collection Name</label>
+        <input class="form-inp" type="text" id="sc-name" placeholder="e.g. Relaxers, Synthetic Wigs, Hair Extensions">
+      </div>
+      <div class="form-grp">
+        <label class="form-lbl">Content Focus</label>
+        <div style="display:flex;gap:7px;flex-wrap:wrap" id="sc-focus-pills">
+          <button class="studio-pill active" data-val="seo-description" onclick="studioSetPill(this,'sc-focus-pills')">SEO Description</button>
+          <button class="studio-pill" data-val="seasonal-promo" onclick="studioSetPill(this,'sc-focus-pills')">Seasonal Promo</button>
+          <button class="studio-pill" data-val="new-arrivals" onclick="studioSetPill(this,'sc-focus-pills')">New Arrivals</button>
+          <button class="studio-pill" data-val="brand-spotlight" onclick="studioSetPill(this,'sc-focus-pills')">Brand Spotlight</button>
+        </div>
+      </div>
+      <button onclick="studioGenCollection()" style="width:100%;background:var(--teal);color:#fff;border:none;border-radius:var(--r2);padding:15px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">
+        Generate Collection Content
+        <div style="font-size:11px;font-weight:400;opacity:.8;margin-top:3px">SEO description · meta · GBP posts · Instagram · Facebook · ~20 sec</div>
+      </button>
+
+      <div id="sc-loading" style="display:none;text-align:center;padding:40px;background:var(--card);border-radius:var(--r2);box-shadow:var(--shadow);margin-top:14px">
+        <div class="spin" style="margin:0 auto 16px"></div>
+        <div style="font-size:16px;font-weight:700" id="sc-loading-msg">Writing collection content…</div>
+      </div>
       <div id="sc-results"></div>
     </div>
 
@@ -2189,92 +2252,336 @@ function studioGetPill(groupId) {
 }
 
 // Load products into studio
+// ── STUDIO PRODUCT SMART TABS ────────────────────────────────────────────────
+let _studioCurrentTab = 'sellers';
+
 async function studioLoadProducts() {
-  const s=cfg();
-  // Reuse cached products from main dashboard if available
-  const cached=localStorage.getItem('cc_prods_v2')||localStorage.getItem('cc_products');
-  if(cached) { try { studioProds=JSON.parse(cached); studioFilteredProds=[...studioProds]; studioPage=0; studioRenderProdPage(); studioRenderSuggested(); return; } catch(e){} }
-  if(!s.token||!s.shop) { studioProds=liveData.shopify?.topProducts||[]; studioFilteredProds=[...studioProds]; studioRenderProdPage(); return; }
+  const s = cfg();
+  const cached = localStorage.getItem('cc_prods_v2') || localStorage.getItem('cc_products');
+  if(cached) {
+    try {
+      studioProds = JSON.parse(cached);
+      studioFilteredProds = [...studioProds];
+      studioPage = 0;
+      studioSugTab('sellers', document.getElementById('spt-sellers'));
+      return;
+    } catch(e) {}
+  }
+  if(!s.token || !s.shop) {
+    studioProds = liveData.shopify?.topProducts || [];
+    studioFilteredProds = [...studioProds];
+    studioSugTab('sellers', document.getElementById('spt-sellers'));
+    return;
+  }
   try {
-    const r=await fetch(`/api/shopify-live?domain=${s.shop}&token=${s.token}`);
-    const d=await r.json();
-    studioProds=(d.topProducts||[]);
-    studioFilteredProds=[...studioProds]; studioPage=0;
-    studioRenderProdPage(); studioRenderSuggested();
+    const r = await fetch(`/api/shopify-live?domain=${s.shop}&token=${s.token}`);
+    const d = await r.json();
+    studioProds = (d.topProducts || []);
+    studioFilteredProds = [...studioProds];
+    studioPage = 0;
+    studioSugTab('sellers', document.getElementById('spt-sellers'));
   } catch(e) {}
 }
 
-function studioRenderProdPage() {
-  const g=document.getElementById('studio-prod-grid');
-  if(!g) return;
-  const page=studioFilteredProds.slice(studioPage*STUDIO_PAGE,(studioPage+1)*STUDIO_PAGE);
-  if(studioPage===0) g.innerHTML='';
-  if(!page.length&&studioPage===0){g.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--ink3);font-size:13px">No products — add Shopify token in ⚙ Settings</div>';return;}
-  page.forEach(p=>{
-    const card=document.createElement('div');
-    card.className='studio-p-card'; card.dataset.sid=p.id;
-    card.innerHTML=(p.image?`<img src="${p.image}" alt="" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;background:var(--bg);margin-bottom:5px" onerror="this.style.display='none'">`:`<div style="width:100%;aspect-ratio:1;background:var(--teal-light);border-radius:8px;margin-bottom:5px;display:flex;align-items:center;justify-content:center;font-size:24px">✂</div>`)+
-      `<div style="font-size:11px;color:var(--ink);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${p.title||''}</div>`+
-      `<div style="font-size:12px;color:var(--teal);font-weight:700;margin-top:3px">${p.price||''}</div>`;
-    card.onclick=()=>studioSelectProd(p);
-    g.appendChild(card);
-  });
+function studioSugTab(tab, btn) {
+  _studioCurrentTab = tab;
+  document.querySelectorAll('[id^="spt-"]').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+
+  const g = document.getElementById('studio-sug-grid');
+  const pgrid = document.getElementById('studio-prod-grid');
+  const searchRow = document.getElementById('studio-search-row');
+  const loadMoreBtn = document.getElementById('studio-load-more-btn');
+  const kwMatches = document.getElementById('studio-kw-matches');
+
+  // Hide all variable sections first
+  if(pgrid) pgrid.style.display = 'none';
+  if(searchRow) searchRow.style.display = 'none';
+  if(loadMoreBtn) loadMoreBtn.style.display = 'none';
+  if(kwMatches) kwMatches.style.display = 'none';
+
+  if(tab === 'sellers') {
+    // Top selling products from Shopify this week
+    const sellers = liveData.compare?.comparison?.length
+      ? liveData.compare.comparison.slice(0,9)
+      : (liveData.shopify?.topProducts || studioProds).slice(0,9);
+    g.innerHTML = '';
+    if(!sellers.length) {
+      g.innerHTML = '<div style="text-align:center;padding:24px;color:var(--ink3);font-size:13px;background:var(--card);border-radius:var(--r2)">Connect Shopify in Settings to see top sellers</div>';
+      return;
+    }
+    g.style.display = 'grid';
+    g.style.gridTemplateColumns = 'repeat(3,1fr)';
+    g.style.gap = '10px';
+    sellers.forEach(p => {
+      const qty = p.quantity || p.qty || 0;
+      const trend = p.trend === 'up' ? `<span style="color:var(--teal);font-size:10px;font-weight:700">↑ ${p.diff||''}</span>` :
+                    p.trend === 'new' ? `<span style="color:var(--blue);font-size:10px;font-weight:700">★ NEW</span>` :
+                    p.trend === 'down' ? `<span style="color:var(--red);font-size:10px;font-weight:700">↓ ${Math.abs(p.diff||0)}</span>` : '';
+      const card = document.createElement('div');
+      card.className = 'studio-sug-card'; card.dataset.sid = p.id;
+      card.innerHTML = (p.image ? `<img src="${p.image}" style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">` : `<div style="width:44px;height:44px;border-radius:8px;background:var(--teal-light);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px">✂</div>`) +
+        `<div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:600;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${p.title||''}</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:3px">
+            <span style="font-size:10px;font-weight:700;background:var(--teal-light);color:var(--teal);border-radius:20px;padding:1px 8px">${qty} sold</span>
+            ${trend}
+          </div>
+        </div>`;
+      card.onclick = () => studioSelectProd(p);
+      g.appendChild(card);
+    });
+
+  } else if(tab === 'keywords') {
+    // Match Search Console keywords to products
+    const sc = liveData.sc;
+    if(!sc || (!sc.lowCTR?.length && !sc.nearPage1?.length)) {
+      g.innerHTML = '<div style="text-align:center;padding:24px;color:var(--ink3);font-size:13px;background:var(--card);border-radius:var(--r2)">Search Console data needed — it loads automatically when you refresh the dashboard</div>';
+      return;
+    }
+    const keywords = [...(sc.lowCTR||[]).slice(0,10), ...(sc.nearPage1||[]).slice(0,8)];
+    g.style.display = 'block';
+    g.innerHTML = '';
+    keywords.forEach(kw => {
+      const q = kw.query || kw.q || '';
+      // Find matching products
+      const matches = studioProds.filter(p => {
+        const pl = (p.title||'').toLowerCase();
+        const ql = q.toLowerCase();
+        return ql.split(' ').some(word => word.length > 3 && pl.includes(word));
+      }).slice(0, 2);
+
+      const ctrColor = kw.ctr < 1 ? 'var(--red)' : kw.ctr < 2 ? 'var(--yellow2)' : 'var(--teal)';
+      const isLowCTR = (kw.impressions||kw.impr||0) > 200 && kw.ctr < 2;
+
+      const row = document.createElement('div');
+      row.style.cssText = 'background:var(--card);border-radius:var(--r2);padding:12px 14px;margin-bottom:8px;box-shadow:var(--shadow)';
+      row.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <div style="flex:1;min-width:180px">
+            <div style="font-size:13px;font-weight:700;color:var(--ink)">"${q}"</div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:2px">${(kw.impressions||kw.impr||0).toLocaleString()} impressions · <span style="color:${ctrColor};font-weight:700">${(kw.ctr||0).toFixed(2)}% CTR</span> · pos ${(kw.position||kw.pos||0).toFixed(1)}</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            ${matches.length ? matches.map(p=>`<button onclick="studioSelectProdAndKeyword(${JSON.stringify({id:p.id,title:p.title,price:p.price||'',image:p.image||'',handle:p.handle||'',vendor:p.vendor||'',productType:p.productType||'',tags:p.tags||'',description:p.description||''}).replace(/"/g,'&quot;')},'${q.replace(/'/g,"\\'")}');" style="background:var(--teal-light);color:var(--teal);border:1px solid var(--teal);border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.title}">🛍 ${p.title.substring(0,25)}${p.title.length>25?'…':''}</button>`).join('') : ''}
+            <button onclick="openStudio('${q.replace(/'/g,"\\'")}');" style="background:var(--teal);color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">✍ Write Blog →</button>
+          </div>
+        </div>`;
+      g.appendChild(row);
+    });
+
+  } else if(tab === 'highview') {
+    // High visit no buy — from GA4 sessions vs no orders, or from Search Console high impressions low CTR
+    const sc = liveData.sc;
+    const highOpp = sc ? [...(sc.lowCTR||[])].filter(r=>(r.impressions||r.impr||0)>300 && (r.ctr||0)<1.5).slice(0,12) : [];
+    if(!highOpp.length) {
+      g.innerHTML = '<div style="text-align:center;padding:24px;color:var(--ink3);font-size:13px;background:var(--card);border-radius:var(--r2)">High-visit/no-buy data comes from Search Console — keywords with 300+ impressions but under 1.5% CTR. Load dashboard data first.</div>';
+      return;
+    }
+    g.style.display = 'block';
+    g.innerHTML = `<div style="font-size:11px;color:var(--ink3);margin-bottom:10px;padding:8px 12px;background:var(--yellow-bg);border-radius:var(--r);border:1px solid var(--yellow2)">⚠ These keywords get traffic but people aren't clicking through to buy. Writing a blog for each one is the fastest way to turn impressions into revenue.</div>`;
+    highOpp.forEach(kw => {
+      const q = kw.query || kw.q || '';
+      const matches = studioProds.filter(p => {
+        const pl = (p.title||'').toLowerCase();
+        return q.toLowerCase().split(' ').some(w => w.length > 3 && pl.includes(w));
+      }).slice(0,1);
+      const card = document.createElement('div');
+      card.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card);border-radius:var(--r);margin-bottom:6px;box-shadow:var(--shadow)';
+      card.innerHTML = `
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:700">"${q}"</div>
+          <div style="font-size:11px;color:var(--ink3)">${(kw.impressions||kw.impr||0).toLocaleString()} impressions · <span style="color:var(--red);font-weight:700">${(kw.ctr||0).toFixed(2)}% CTR</span> · pos ${(kw.position||kw.pos||0).toFixed(1)}</div>
+          ${matches.length?`<div style="font-size:11px;color:var(--teal);margin-top:2px">✓ We stock: ${matches[0].title.substring(0,40)}</div>`:'<div style="font-size:11px;color:var(--ink3)">No direct product match — write a category blog</div>'}
+        </div>
+        <button onclick="openStudio('${q.replace(/'/g,"\\'")}');" style="background:var(--teal);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0">Write Blog →</button>`;
+      g.appendChild(card);
+    });
+
+  } else if(tab === 'new') {
+    // New this week from compare data
+    const newProds = liveData.compare?.comparison?.filter(p=>p.trend==='new') || [];
+    const risers = liveData.compare?.comparison?.filter(p=>p.trend==='up').slice(0,6) || [];
+    const combined = [...newProds, ...risers].slice(0,9);
+    if(!combined.length) {
+      g.innerHTML = '<div style="text-align:center;padding:24px;color:var(--ink3);font-size:13px;background:var(--card);border-radius:var(--r2)">New and trending product data loads from your Shopify sales comparison. Refresh the dashboard to populate.</div>';
+      return;
+    }
+    g.style.display = 'grid';
+    g.style.gridTemplateColumns = 'repeat(3,1fr)';
+    g.style.gap = '10px';
+    combined.forEach(p => {
+      const badge = p.trend==='new' ? '★ NEW' : `↑ +${p.diff||0} this week`;
+      const badgeColor = p.trend==='new' ? 'var(--blue)' : 'var(--teal)';
+      const card = document.createElement('div');
+      card.className = 'studio-sug-card'; card.dataset.sid = p.id;
+      card.innerHTML = (p.image ? `<img src="${p.image}" style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">` : `<div style="width:44px;height:44px;border-radius:8px;background:var(--teal-light);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px">✂</div>`) +
+        `<div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:600;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${p.title||''}</div>
+          <span style="font-size:10px;font-weight:700;color:#fff;background:${badgeColor};border-radius:20px;padding:1px 8px;margin-top:3px;display:inline-block">${badge}</span>
+        </div>`;
+      card.onclick = () => studioSelectProd(p);
+      g.appendChild(card);
+    });
+
+  } else if(tab === 'all') {
+    // All products grid with search
+    g.style.display = 'none';
+    if(searchRow) searchRow.style.display = 'block';
+    if(pgrid) { pgrid.style.display = 'grid'; studioRenderProdPage(); }
+    if(loadMoreBtn) loadMoreBtn.style.display = 'block';
+    return;
+  }
 }
 
-function studioRenderSuggested() {
-  const g=document.getElementById('studio-sug-grid');
-  if(!g||!studioProds.length) return;
-  const picks=studioProds.slice(0,3);
-  const badges=["Today's Pick","High Traffic","Latest Added"];
-  g.innerHTML='';
-  picks.forEach((p,i)=>{
-    const card=document.createElement('div');
-    card.className='studio-sug-card'; card.dataset.sid=p.id;
-    card.innerHTML=(p.image?`<img src="${p.image}" style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">`:`<div style="width:44px;height:44px;border-radius:8px;background:var(--teal-light);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px">✂</div>`)+
-      `<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${p.title||''}</div><span style="display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;color:#fff;background:var(--yellow2);border-radius:20px;padding:1px 8px;margin-top:3px">${badges[i]}</span></div>`;
-    card.onclick=()=>studioSelectProd(p);
+function studioSelectProdAndKeyword(p, keyword) {
+  studioSelectProd(p);
+  // Also pre-fill keyword in the keyword blog tab
+  const kwEl = document.getElementById('sk-keyword');
+  if(kwEl) kwEl.value = keyword;
+  toast(`Selected: ${p.title.substring(0,30)} · keyword: "${keyword}"`, 'success');
+}
+
+// Keyword matching for keyword blog tab
+function studioMatchKeyword(q) {
+  if(!q || q.length < 3) {
+    const el = document.getElementById('sk-matched-products');
+    if(el) el.style.display = 'none';
+    return;
+  }
+  const ql = q.toLowerCase();
+  const words = ql.split(' ').filter(w=>w.length>3);
+  const matches = studioProds.filter(p => {
+    const pl = (p.title||'').toLowerCase();
+    return words.some(w => pl.includes(w)) || pl.includes(ql);
+  }).slice(0,6);
+
+  const el = document.getElementById('sk-matched-products');
+  const list = document.getElementById('sk-matched-list');
+  if(!el || !list) return;
+
+  if(!matches.length) { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  list.innerHTML = matches.map(p =>
+    `<div style="display:flex;align-items:center;gap:7px;background:var(--teal-light);border:1px solid var(--teal);border-radius:var(--r);padding:6px 10px;cursor:pointer" onclick="studioSelectProd(${JSON.stringify({id:p.id,title:p.title,price:p.price||'',image:p.image||'',handle:p.handle||'',vendor:p.vendor||'',productType:p.productType||'',tags:p.tags||'',description:p.description||''}).replace(/"/g,'&quot;')})">
+      ${p.image?`<img src="${p.image}" style="width:28px;height:28px;border-radius:5px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">`:``}
+      <div style="font-size:11px;font-weight:600;color:var(--teal);min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:180px">${p.title}</div>
+      <span style="font-size:10px;color:var(--teal);opacity:.7;flex-shrink:0">→ will be linked</span>
+    </div>`
+  ).join('');
+}
+
+function studioRenderProdPage() {
+  const g = document.getElementById('studio-prod-grid');
+  if(!g) return;
+  const page = studioFilteredProds.slice(studioPage*STUDIO_PAGE, (studioPage+1)*STUDIO_PAGE);
+  if(studioPage === 0) g.innerHTML = '';
+  if(!page.length && studioPage===0) { g.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--ink3);font-size:13px">No products — add Shopify token in ⚙ Settings</div>'; return; }
+  page.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'studio-p-card'; card.dataset.sid = p.id;
+    card.innerHTML = (p.image?`<img src="${p.image}" alt="" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;background:var(--bg);margin-bottom:5px" onerror="this.style.display='none'">`:`<div style="width:100%;aspect-ratio:1;background:var(--teal-light);border-radius:8px;margin-bottom:5px;display:flex;align-items:center;justify-content:center;font-size:24px">✂</div>`) +
+      `<div style="font-size:11px;color:var(--ink);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${p.title||''}</div>` +
+      `<div style="font-size:12px;color:var(--teal);font-weight:700;margin-top:3px">${p.price||''}</div>`;
+    card.onclick = () => studioSelectProd(p);
     g.appendChild(card);
   });
 }
 
 function studioFilterProds(q) {
-  const ql=q.toLowerCase();
-  studioFilteredProds=studioProds.filter(p=>(p.title||'').toLowerCase().includes(ql)||(p.vendor||'').toLowerCase().includes(ql));
-  studioPage=0; studioRenderProdPage();
+  const ql = q.toLowerCase();
+  studioFilteredProds = studioProds.filter(p => (p.title||'').toLowerCase().includes(ql)||(p.vendor||'').toLowerCase().includes(ql));
+  studioPage = 0; studioRenderProdPage();
 }
-function studioLoadMore(){studioPage++;studioRenderProdPage();}
+function studioLoadMore() { studioPage++; studioRenderProdPage(); }
 
 function studioSelectProd(p) {
-  studioSelProd=p;
+  studioSelProd = p;
   document.querySelectorAll('.studio-p-card,.studio-sug-card').forEach(c=>c.classList.remove('sel'));
   document.querySelectorAll(`[data-sid="${p.id}"]`).forEach(c=>c.classList.add('sel'));
-  const img=document.getElementById('studio-sel-img');
-  const ph=document.getElementById('studio-sel-ph');
-  if(p.image){img.src=p.image;img.style.display='block';if(ph)ph.style.display='none';}
-  else{if(img)img.style.display='none';if(ph)ph.style.display='flex';}
-  document.getElementById('studio-sel-name').textContent=p.title||'';
-  document.getElementById('studio-sel-price').textContent=p.price||'';
-  const bar=document.getElementById('studio-sel-bar');
-  const btn=document.getElementById('studio-prod-btn');
-  if(bar){bar.style.display='flex';}
-  if(btn){btn.style.display='flex';}
-  document.getElementById('studio-prod-results').innerHTML='';
+  const img = document.getElementById('studio-sel-img');
+  const ph = document.getElementById('studio-sel-ph');
+  if(p.image) { img.src=p.image; img.style.display='block'; if(ph)ph.style.display='none'; }
+  else { if(img)img.style.display='none'; if(ph)ph.style.display='flex'; }
+  document.getElementById('studio-sel-name').textContent = p.title||'';
+  document.getElementById('studio-sel-price').textContent = p.price||'';
+  const bar = document.getElementById('studio-sel-bar');
+  const btn = document.getElementById('studio-prod-btn');
+  if(bar) bar.style.display = 'flex';
+  if(btn) btn.style.display = 'flex';
+  document.getElementById('studio-prod-results').innerHTML = '';
+  window.scrollTo({top: document.getElementById('studio-sel-bar').offsetTop - 80, behavior:'smooth'});
 }
 
 function studioClearSel() {
-  studioSelProd=null;
-  document.getElementById('studio-sel-bar').style.display='none';
-  document.getElementById('studio-prod-btn').style.display='none';
+  studioSelProd = null;
+  document.getElementById('studio-sel-bar').style.display = 'none';
+  document.getElementById('studio-prod-btn').style.display = 'none';
   document.querySelectorAll('.studio-p-card,.studio-sug-card').forEach(c=>c.classList.remove('sel'));
 }
 
 async function studioLoadUrl() {
-  const url=document.getElementById('studio-url-inp').value.trim();
+  const url = document.getElementById('studio-url-inp').value.trim();
   if(!url) return;
-  const handle=url.includes('/products/')?url.split('/products/')[1].split('?')[0]:url;
-  const title=handle.replace(/-/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
+  const handle = url.includes('/products/') ? url.split('/products/')[1].split('?')[0] : url;
+  const title = handle.replace(/-/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
   studioSelectProd({id:handle,title,price:'',image:'',tags:'',productType:'Hair Care',vendor:'',description:'',handle});
-  document.getElementById('studio-url-inp').value='';
+  document.getElementById('studio-url-inp').value = '';
+}
+
+// ── COLLECTIONS AUTO-LOAD ─────────────────────────────────────────────────────
+let studioColls = [];
+let studioCollsDone = new Set(JSON.parse(localStorage.getItem('cc_colls_done')||'[]'));
+
+async function studioLoadCollections() {
+  const s = cfg();
+  if(!s.token||!s.shop) {
+    document.getElementById('sc-collections-grid').innerHTML = '<div style="text-align:center;padding:24px;color:var(--ink3);font-size:13px;background:var(--card);border-radius:var(--r2)">Add Shopify token in ⚙ Settings to load collections</div>';
+    return;
+  }
+  document.getElementById('sc-collections-grid').innerHTML = '<div style="text-align:center;padding:24px;color:var(--ink3)"><div class="spin" style="margin:0 auto 10px;width:28px;height:28px;border-width:3px"></div>Loading collections…</div>';
+  try {
+    const r = await fetch(`/api/shopify?domain=${s.shop}&token=${s.token}&endpoint=collections&limit=250`);
+    const d = await r.json();
+    studioColls = [...(d.custom_collections||[]), ...(d.smart_collections||[])].map(c=>({
+      id: c.id, title: c.title, handle: c.handle, count: c.products_count||0
+    }));
+    studioRenderCollections();
+  } catch(e) {
+    document.getElementById('sc-collections-grid').innerHTML = `<div style="text-align:center;padding:24px;color:var(--red);font-size:13px">Error: ${e.message}</div>`;
+  }
+}
+
+function studioRenderCollections(filter='') {
+  const grid = document.getElementById('sc-collections-grid');
+  if(!grid) return;
+  const filtered = filter ? studioColls.filter(c=>c.title.toLowerCase().includes(filter.toLowerCase())) : studioColls;
+  const done = studioCollsDone;
+  grid.innerHTML = `
+    <div style="margin-bottom:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input type="text" placeholder="Filter collections…" oninput="studioRenderCollections(this.value)" style="flex:1;min-width:160px;padding:8px 12px;border:2px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:inherit;outline:none;background:var(--bg);color:var(--ink)" onfocus="this.style.borderColor='var(--teal)'" onblur="this.style.borderColor='var(--border2)'">
+      <span style="font-size:11px;color:var(--ink3)">${done.size}/${studioColls.length} written</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;max-height:320px;overflow-y:auto">
+      ${filtered.map(c => {
+        const isDone = done.has(String(c.id));
+        return `<div onclick="studioSelectCollection('${c.id}','${c.title.replace(/'/g,"\\'")}','${c.handle||''}')" style="background:var(--card);border:2px solid ${isDone?'var(--teal)':'var(--border2)'};border-radius:var(--r);padding:12px;cursor:pointer;transition:all .15s;position:relative" onmouseover="this.style.borderColor='var(--teal)'" onmouseout="this.style.borderColor='${isDone?'var(--teal)':'var(--border2)'}'">
+          ${isDone?`<span style="position:absolute;top:6px;right:6px;font-size:10px;font-weight:700;background:var(--teal);color:#fff;border-radius:20px;padding:1px 6px">✓ Done</span>`:''}
+          <div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.3;padding-right:${isDone?'40px':'0'}">${c.title}</div>
+          <div style="font-size:11px;color:var(--ink3);margin-top:3px">${c.count} products · ${isDone?'<span style="color:var(--teal)">SEO written</span>':'<span style="color:var(--yellow2)">needs content</span>'}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function studioSelectCollection(id, title, handle) {
+  document.getElementById('sc-name').value = title;
+  document.getElementById('sc-name').focus();
+  // Mark as needing content — highlight the generate button
+  const btn = document.querySelector('#ss-collection button[onclick="studioGenCollection()"]');
+  if(btn) { btn.style.background='var(--yellow2)'; setTimeout(()=>btn.style.background='var(--teal)',2000); }
+  window._studioSelectedCollId = id;
+  toast(`Selected: ${title} — click Generate to create SEO content`, 'success');
 }
 
 // Studio Claude call — always injects live dashboard data
@@ -2446,6 +2753,12 @@ async function studioGenCollection() {
       `Generate content for collection: ${name}\nFocus: ${focus}\nURL: https://cchairandbeauty.com/collections/${name.toLowerCase().replace(/\s+/g,'-')}`
     );
     document.getElementById('sc-loading').style.display='none';
+    // Mark collection as done
+    if(window._studioSelectedCollId) {
+      studioCollsDone.add(String(window._studioSelectedCollId));
+      try { localStorage.setItem('cc_colls_done', JSON.stringify([...studioCollsDone])); } catch(e){}
+      if(studioColls.length) studioRenderCollections();
+    }
     document.getElementById('sc-results').innerHTML=
       studioResultSec(`📦 ${name} — SEO Content`,[
         {label:'Meta Title',content:c.collection_meta_title,badge:(c.collection_meta_title||'').length+'/60'},
