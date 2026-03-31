@@ -445,7 +445,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
     </div>
     <div class="form-grp">
       <label class="form-lbl">Google Ads Customer ID</label>
-      <input class="form-inp" type="text" id="s-ads-id" value="3934493272" placeholder="1234567890 (no dashes)">
+      <input class="form-inp" type="text" id="s-ads-id" placeholder="1234567890 (no dashes)">
     </div>
     <div class="modal-btns">
       <button class="btn-ghost-dk" onclick="closeSettings()">Cancel</button>
@@ -482,19 +482,24 @@ function cfg(){return{
 };}
 function openSettings(){
   const s=cfg();
-  ['key','shop','token','budget','site','ga4','ads-id'].forEach(k=>{
-    const el=document.getElementById('s-'+k);
-    if(el)el.value=s[k.replace('-','')]||'';
-  });
+  document.getElementById('s-key').value=s.key||'';
+  document.getElementById('s-shop').value=s.shop||'';
+  document.getElementById('s-token').value=s.token||'';
+  document.getElementById('s-budget').value=s.budget||'3500';
+  document.getElementById('s-site').value=s.site||'';
+  document.getElementById('s-ga4').value=s.ga4||'';
+  document.getElementById('s-ads-id').value=s.adsId||'';
   document.getElementById('settings-modal').classList.add('open');
 }
 function closeSettings(){document.getElementById('settings-modal').classList.remove('open');}
 function saveSettings(){
-  const map={key:'cc_key','shop':'cc_shop',token:'cc_token',budget:'cc_budget',site:'cc_site',ga4:'cc_ga4','ads-id':'cc_ads_id'};
-  Object.entries(map).forEach(([id,key])=>{
-    const el=document.getElementById('s-'+id);
-    if(el)localStorage.setItem(key,el.value.trim());
-  });
+  localStorage.setItem('cc_key',document.getElementById('s-key').value.trim());
+  localStorage.setItem('cc_shop',document.getElementById('s-shop').value.trim());
+  localStorage.setItem('cc_token',document.getElementById('s-token').value.trim());
+  localStorage.setItem('cc_budget',document.getElementById('s-budget').value.trim());
+  localStorage.setItem('cc_site',document.getElementById('s-site').value.trim());
+  localStorage.setItem('cc_ga4',document.getElementById('s-ga4').value.trim());
+  localStorage.setItem('cc_ads_id',document.getElementById('s-ads-id').value.trim());
   closeSettings();toast('Settings saved ✓','success');
 }
 
