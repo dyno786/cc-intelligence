@@ -41,10 +41,14 @@ export default async function handler(req, res) {
     console.error('Google Ads raw response:', rawText.substring(0, 1000));
 
     if (contentType.includes('text/html') || rawText.trim().startsWith('<!')) {
-      return res.status(500).json({
-        error: 'Google Ads returned HTML page',
-        status: r.status,
-        preview: rawText.substring(0, 500),
+      // Return 200 so browser can see the error details
+      return res.json({
+        campaigns: [], totalSpend: 0, totalClicks: 0, totalConv: 0,
+        debugError: 'HTML response from Google Ads API',
+        httpStatus: r.status,
+        contentType,
+        preview: rawText.substring(0, 800),
+        note: 'Google returned HTML instead of JSON - see preview for details',
       });
     }
 
