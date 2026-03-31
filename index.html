@@ -1139,319 +1139,276 @@ applyTheme(_theme);
 init();
 </script>
 
+
 <!-- DEBUG PANEL -->
-<div class="page" style="margin-top:0;padding-top:0">
-  <div style="background:var(--card);border-radius:var(--r2);box-shadow:var(--shadow);overflow:hidden;border:1px solid var(--border)">
-    <div style="background:#1a1f2e;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleDebug()">
-      <div style="display:flex;align-items:center;gap:10px">
-        <span style="font-size:13px;font-weight:700;color:#fff">🔧 Debug Console</span>
-        <span style="font-size:11px;color:#636e72" id="debug-summary">Click to expand</span>
+<div id="debug-panel" style="position:fixed;bottom:0;left:0;right:0;z-index:999;font-family:DM Sans,sans-serif">
+  <!-- COLLAPSED BAR -->
+  <div id="dbg-bar" onclick="dbgToggle()" style="background:#0d1117;padding:8px 18px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border-top:2px solid #00B894">
+    <div style="display:flex;align-items:center;gap:12px">
+      <span style="font-size:12px;font-weight:700;color:#00B894">🔧 Debug Console</span>
+      <div style="display:flex;gap:6px" id="dbg-dots">
+        <span class="dbg-dot" id="dd-auth" title="Auth">🔐</span>
+        <span class="dbg-dot" id="dd-sc" title="Search Console">🔍</span>
+        <span class="dbg-dot" id="dd-ga" title="Analytics">📈</span>
+        <span class="dbg-dot" id="dd-ads" title="Ads">💰</span>
+        <span class="dbg-dot" id="dd-shopify" title="Shopify">🛍️</span>
+        <span class="dbg-dot" id="dd-claude" title="Claude">🤖</span>
       </div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <button onclick="event.stopPropagation();runAllTests()" style="background:var(--teal);color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">▶ Run All Tests</button>
-        <button onclick="event.stopPropagation();clearDebugLog()" style="background:rgba(255,255,255,.1);color:#9ba3b8;border:none;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:inherit">Clear</button>
-        <span style="color:#636e72;font-size:12px" id="debug-arrow">▼</span>
-      </div>
+      <span style="font-size:11px;color:#636e72" id="dbg-summary">click to expand</span>
     </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button onclick="event.stopPropagation();dbgRunAll()" style="background:#00B894;color:#fff;border:none;border-radius:5px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">▶ Run All</button>
+      <button onclick="event.stopPropagation();dbgCopy()" style="background:#2d333b;color:#9ba3b8;border:1px solid #444;border-radius:5px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit">Copy</button>
+      <button onclick="event.stopPropagation();dbgClear()" style="background:#2d333b;color:#9ba3b8;border:1px solid #444;border-radius:5px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit">Clear</button>
+      <span id="dbg-arrow" style="color:#636e72;font-size:11px">▲</span>
+    </div>
+  </div>
 
+  <!-- EXPANDED LOG (hidden by default) -->
+  <div id="dbg-body" style="display:none;background:#0d1117;border-top:1px solid #21262d">
     <!-- STATUS ROW -->
-    <div id="debug-body" style="display:none">
-      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0;border-bottom:1px solid var(--border)">
-        <div class="dbg-stat" id="dstat-auth">🔐 Auth</div>
-        <div class="dbg-stat" id="dstat-sc">🔍 Search Console</div>
-        <div class="dbg-stat" id="dstat-ga">📈 Analytics 4</div>
-        <div class="dbg-stat" id="dstat-ads">💰 Google Ads</div>
-        <div class="dbg-stat" id="dstat-shopify">🛍️ Shopify</div>
-        <div class="dbg-stat" id="dstat-claude">🤖 Claude AI</div>
-      </div>
-
-      <!-- LOG OUTPUT -->
-      <div id="debug-log" style="background:#0d1117;font-family:DM Mono,monospace;font-size:12px;line-height:1.8;padding:14px 18px;max-height:320px;overflow-y:auto;white-space:pre-wrap"></div>
-
-      <!-- MANUAL TESTS -->
-      <div style="background:var(--card2);border-top:1px solid var(--border);padding:12px 18px;display:flex;gap:8px;flex-wrap:wrap">
-        <button onclick="dbgTestAuth()" class="dbg-btn">Test Auth</button>
-        <button onclick="dbgTestSC()" class="dbg-btn">Test Search Console</button>
-        <button onclick="dbgTestGA()" class="dbg-btn">Test Analytics</button>
-        <button onclick="dbgTestAds()" class="dbg-btn">Test Ads API</button>
-        <button onclick="dbgTestShopify()" class="dbg-btn">Test Shopify</button>
-        <button onclick="dbgTestClaude()" class="dbg-btn">Test Claude</button>
-        <button onclick="dbgShowEnv()" class="dbg-btn">Show Config</button>
-        <button onclick="dbgShowLiveData()" class="dbg-btn">Show Live Data</button>
-      </div>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);border-bottom:1px solid #21262d">
+      <div class="dbg-s" id="ds-auth">🔐 Auth</div>
+      <div class="dbg-s" id="ds-sc">🔍 Search Console</div>
+      <div class="dbg-s" id="ds-ga">📈 Analytics 4</div>
+      <div class="dbg-s" id="ds-ads">💰 Google Ads</div>
+      <div class="dbg-s" id="ds-shopify">🛍️ Shopify</div>
+      <div class="dbg-s" id="ds-claude">🤖 Claude AI</div>
+    </div>
+    <!-- LOG OUTPUT - 5 lines visible -->
+    <div id="dbg-log" style="font-family:DM Mono,monospace;font-size:11px;line-height:1.8;padding:8px 18px;height:120px;overflow-y:auto;white-space:pre-wrap"></div>
+    <!-- TEST BUTTONS -->
+    <div style="padding:8px 18px;border-top:1px solid #21262d;display:flex;gap:6px;flex-wrap:wrap;background:#161b22">
+      <button onclick="dbgAuth()" class="dbg-b">Auth</button>
+      <button onclick="dbgSC()" class="dbg-b">Search Console</button>
+      <button onclick="dbgGA()" class="dbg-b">Analytics</button>
+      <button onclick="dbgAds()" class="dbg-b">Ads API</button>
+      <button onclick="dbgShopify()" class="dbg-b">Shopify</button>
+      <button onclick="dbgClaude()" class="dbg-b">Claude</button>
+      <button onclick="dbgConfig()" class="dbg-b">Config</button>
+      <button onclick="dbgData()" class="dbg-b">Live Data</button>
     </div>
   </div>
 </div>
 
+<!-- SPACER so content not hidden behind fixed bar -->
+<div style="height:42px"></div>
+
 <style>
-.dbg-stat{padding:8px 12px;font-size:11px;font-weight:600;color:var(--ink3);border-right:1px solid var(--border);text-align:center;background:var(--card)}
-.dbg-stat.ok{color:var(--teal);background:var(--teal-light)}
-.dbg-stat.fail{color:var(--red);background:var(--red-bg)}
-.dbg-stat.run{color:var(--yellow2);background:var(--yellow-bg)}
-.dbg-stat:last-child{border-right:none}
-.dbg-btn{background:var(--card);border:1.5px solid var(--border2);color:var(--ink2);padding:6px 12px;font-size:11px;font-weight:600;border-radius:6px;cursor:pointer;font-family:inherit;transition:all .15s}
-.dbg-btn:hover{border-color:var(--teal);color:var(--teal)}
-.dbg-line-ok{color:#00b894}
-.dbg-line-err{color:#ff7675}
-.dbg-line-warn{color:#fdcb6e}
-.dbg-line-info{color:#74b9ff}
-.dbg-line-dim{color:#636e72}
-.dbg-line-head{color:#a29bfe;font-weight:700}
+.dbg-dot{font-size:12px;opacity:.3;transition:opacity .2s}
+.dbg-dot.ok{opacity:1;filter:drop-shadow(0 0 4px #00B894)}
+.dbg-dot.fail{opacity:1;filter:drop-shadow(0 0 4px #ff7675)}
+.dbg-dot.run{opacity:.7;animation:dbgpulse .6s infinite}
+@keyframes dbgpulse{0%,100%{opacity:.4}50%{opacity:1}}
+.dbg-s{padding:6px 10px;font-size:10px;font-weight:600;color:#636e72;text-align:center;border-right:1px solid #21262d}
+.dbg-s:last-child{border-right:none}
+.dbg-s.ok{color:#00B894;background:rgba(0,184,148,.08)}
+.dbg-s.fail{color:#ff7675;background:rgba(255,118,117,.08)}
+.dbg-s.run{color:#fdcb6e}
+.dbg-b{background:#21262d;border:1px solid #30363d;color:#8b949e;padding:4px 10px;font-size:11px;font-weight:600;border-radius:5px;cursor:pointer;font-family:inherit;transition:all .15s}
+.dbg-b:hover{border-color:#00B894;color:#00B894}
+.dbg-ok{color:#00B894}.dbg-err{color:#ff7675}.dbg-warn{color:#fdcb6e}.dbg-info{color:#74b9ff}.dbg-dim{color:#636e72}.dbg-head{color:#a29bfe;font-weight:700}
 </style>
 
 <script>
-// ── DEBUG PANEL ────────────────────────────────────────────────────
-let debugOpen = false;
-const debugLines = [];
+let dbgOpen = false;
+const dbgLines = [];
 
-function toggleDebug(){
-  debugOpen = !debugOpen;
-  document.getElementById('debug-body').style.display = debugOpen ? 'block' : 'none';
-  document.getElementById('debug-arrow').textContent = debugOpen ? '▲' : '▼';
-  if(debugOpen) renderDebugLog();
+function dbgToggle(){
+  dbgOpen = !dbgOpen;
+  document.getElementById('dbg-body').style.display = dbgOpen ? 'block' : 'none';
+  document.getElementById('dbg-arrow').textContent = dbgOpen ? '▼' : '▲';
+  if(dbgOpen) dbgRender();
 }
 
 function dlog(msg, cls='dim'){
   const ts = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  debugLines.unshift({ts, msg, cls});
-  if(debugLines.length > 200) debugLines.pop();
-  if(debugOpen) renderDebugLog();
-  updateDebugSummary();
+  dbgLines.unshift({ts, msg, cls});
+  if(dbgLines.length > 500) dbgLines.pop();
+  if(dbgOpen) dbgRender();
+  dbgUpdateSummary();
 }
 
-function renderDebugLog(){
-  const el = document.getElementById('debug-log');
+function dbgRender(){
+  const el = document.getElementById('dbg-log');
   if(!el) return;
-  el.innerHTML = debugLines.map(l =>
-    `<span class="dbg-line-dim">[${l.ts}]</span> <span class="dbg-line-${l.cls}">${l.msg}</span>`
-  ).join('
-') || '<span class="dbg-line-dim">No logs yet — run a test</span>';
+  el.innerHTML = dbgLines.length
+    ? dbgLines.map(l=>`<span class="dbg-dim">[${l.ts}]</span> <span class="dbg-${l.cls}">${l.msg}</span>`).join('
+')
+    : '<span class="dbg-dim">No logs yet — click Run All or test individually</span>';
+  el.scrollTop = 0; // newest at top
 }
 
-function clearDebugLog(){
-  debugLines.length = 0;
-  renderDebugLog();
-  ['auth','sc','ga','ads','shopify','claude'].forEach(id => setDbgStat(id,''));
-  updateDebugSummary();
+function dbgClear(){
+  dbgLines.length = 0;
+  dbgRender();
+  ['auth','sc','ga','ads','shopify','claude'].forEach(id=>{
+    const d=document.getElementById('dd-'+id); if(d) d.className='dbg-dot';
+    const s=document.getElementById('ds-'+id); if(s) s.className='dbg-s';
+  });
+  document.getElementById('dbg-summary').textContent='cleared';
 }
 
-function updateDebugSummary(){
-  const passed = ['auth','sc','ga','ads','shopify','claude'].filter(id => {
-    const el = document.getElementById('dstat-'+id);
-    return el && el.classList.contains('ok');
+function dbgCopy(){
+  const text = dbgLines.map(l=>'['+l.ts+'] '+l.msg).join('
+');
+  navigator.clipboard.writeText(text||'No logs').then(()=>{
+    const btn = event.target;
+    const orig = btn.textContent;
+    btn.textContent='Copied!';btn.style.color='#00B894';
+    setTimeout(()=>{btn.textContent=orig;btn.style.color='';},2000);
+  });
+}
+
+function dbgUpdateSummary(){
+  const passed = ['auth','sc','ga','ads','shopify','claude'].filter(id=>{
+    const el=document.getElementById('dd-'+id);
+    return el&&el.classList.contains('ok');
   }).length;
-  document.getElementById('debug-summary').textContent = passed + '/6 connections OK';
+  const total = 6;
+  document.getElementById('dbg-summary').textContent = passed+'/'+total+' OK';
 }
 
-function setDbgStat(id, state){
-  const el = document.getElementById('dstat-'+id);
-  if(!el) return;
-  el.className = 'dbg-stat' + (state ? ' '+state : '');
+function setDbg(id, state){
+  const d=document.getElementById('dd-'+id); if(d){d.className='dbg-dot'+(state?' '+state:'');}
+  const s=document.getElementById('ds-'+id); if(s){s.className='dbg-s'+(state?' '+state:'');}
 }
 
-// INDIVIDUAL TESTS
-async function dbgTestAuth(){
-  dlog('=== TESTING GOOGLE AUTH ===', 'head');
-  setDbgStat('auth','run');
+// TESTS
+async function dbgAuth(){
+  dlog('--- AUTH ---','head'); setDbg('auth','run');
   try{
-    const r = await fetch('/api/auth/status');
-    const d = await r.json();
-    if(d.authenticated){
-      setDbgStat('auth','ok');
-      dlog('✓ Google OAuth: AUTHENTICATED — token is valid', 'ok');
-      dlog('→ Search Console, Analytics and Ads APIs can be called', 'ok');
-    } else {
-      setDbgStat('auth','fail');
-      dlog('✗ NOT AUTHENTICATED — click Connect Google Account', 'err');
-      dlog('→ Make sure you log in with cchairnbeauty@gmail.com', 'warn');
-    }
-    dlog('Response: '+JSON.stringify(d), 'dim');
-  }catch(e){
-    setDbgStat('auth','fail');
-    dlog('✗ Auth endpoint error: '+e.message, 'err');
-  }
+    const r=await fetch('/api/auth/status'); const d=await r.json();
+    if(d.authenticated){setDbg('auth','ok');dlog('✓ Authenticated with Google','ok');}
+    else{setDbg('auth','fail');dlog('✗ Not authenticated — click Connect Google Account','err');dlog('→ Use cchairnbeauty@gmail.com','warn');}
+  }catch(e){setDbg('auth','fail');dlog('✗ Auth error: '+e.message,'err');}
+  dbgUpdateSummary();
 }
 
-async function dbgTestSC(){
-  dlog('=== TESTING SEARCH CONSOLE API ===', 'head');
-  setDbgStat('sc','run');
-  const s = cfg();
-  dlog('Site URL: '+s.site, 'dim');
+async function dbgSC(){
+  dlog('--- SEARCH CONSOLE ---','head'); setDbg('sc','run');
+  const s=cfg(); dlog('Site: '+s.site,'dim');
   try{
-    const r = await fetch('/api/search-console?site='+encodeURIComponent(s.site));
-    const d = await r.json();
-    if(d.error) throw new Error(d.error);
-    setDbgStat('sc','ok');
-    dlog('✓ SEARCH CONSOLE: CONNECTED', 'ok');
-    dlog('Total clicks (28d): '+d.totalClicks, 'ok');
-    dlog('Total impressions: '+(d.totalImpressions||0).toLocaleString(), 'ok');
-    dlog('Avg position: '+(d.avgPosition||0).toFixed(1), 'ok');
-    dlog('Low CTR opportunities: '+(d.lowCTR||[]).length, 'ok');
-    dlog('Nearly page 1: '+(d.nearPage1||[]).length, 'ok');
-    if(d.lowCTR&&d.lowCTR[0]) dlog('Top opportunity: "'+d.lowCTR[0].query+'" — '+(d.lowCTR[0].impressions||0)+' impressions, '+(d.lowCTR[0].ctr||0).toFixed(1)+'% CTR', 'info');
+    const r=await fetch('/api/search-console?site='+encodeURIComponent(s.site)); const d=await r.json();
+    if(d.error)throw new Error(d.error);
+    setDbg('sc','ok');
+    dlog('✓ Connected','ok');
+    dlog('Clicks: '+d.totalClicks+' | Impressions: '+(d.totalImpressions||0).toLocaleString()+' | Pos: '+(d.avgPosition||0).toFixed(1),'ok');
+    dlog('Opportunities: '+(d.lowCTR||[]).length+' low CTR | '+(d.nearPage1||[]).length+' near page 1','info');
+    if(d.lowCTR&&d.lowCTR[0])dlog('Top: "'+d.lowCTR[0].query+'" '+d.lowCTR[0].impressions+' impr '+d.lowCTR[0].ctr.toFixed(1)+'% CTR','info');
   }catch(e){
-    setDbgStat('sc','fail');
-    dlog('✗ SEARCH CONSOLE FAILED: '+e.message, 'err');
-    dlog('→ Are you logged in with cchairnbeauty@gmail.com?', 'warn');
-    dlog('→ Does that account have access to cchairandbeauty.com in Search Console?', 'warn');
-    dlog('→ Is the Search Console API enabled in Google Cloud?', 'warn');
+    setDbg('sc','fail');dlog('✗ Failed: '+e.message,'err');
+    dlog('→ Log in with cchairnbeauty@gmail.com (owns the SC property)','warn');
+    dlog('→ Check SC API enabled in Google Cloud','warn');
   }
+  dbgUpdateSummary();
 }
 
-async function dbgTestGA(){
-  dlog('=== TESTING ANALYTICS 4 API ===', 'head');
-  setDbgStat('ga','run');
-  const s = cfg();
-  dlog('Property ID: '+s.ga4, 'dim');
+async function dbgGA(){
+  dlog('--- ANALYTICS 4 ---','head'); setDbg('ga','run');
+  const s=cfg(); dlog('Property: '+s.ga4,'dim');
   try{
-    const r = await fetch('/api/analytics?propertyId='+s.ga4);
-    const d = await r.json();
-    if(d.error) throw new Error(d.error);
-    setDbgStat('ga','ok');
-    dlog('✓ ANALYTICS 4: CONNECTED', 'ok');
-    dlog('Sessions (7d): '+(d.sessions||0).toLocaleString(), 'ok');
-    dlog('Bounce rate: '+d.bounceRate+'%', 'ok');
-    dlog('New users: '+(d.newUsers||0).toLocaleString(), 'ok');
-    dlog('Top pages: '+(d.topPages||[]).slice(0,3).map(p=>p.page).join(', '), 'info');
+    const r=await fetch('/api/analytics?propertyId='+s.ga4); const d=await r.json();
+    if(d.error)throw new Error(d.error);
+    setDbg('ga','ok');
+    dlog('✓ Connected','ok');
+    dlog('Sessions: '+(d.sessions||0).toLocaleString()+' | Bounce: '+d.bounceRate+'% | New users: '+(d.newUsers||0).toLocaleString(),'ok');
   }catch(e){
-    setDbgStat('ga','fail');
-    dlog('✗ ANALYTICS 4 FAILED: '+e.message, 'err');
-    dlog('→ Are you logged in with the correct Google account?', 'warn');
-    dlog('→ Is the GA4 Property ID correct? Currently: '+s.ga4, 'warn');
-    dlog('→ Is Google Analytics Data API enabled in Google Cloud?', 'warn');
+    setDbg('ga','fail');dlog('✗ Failed: '+e.message,'err');
+    dlog('→ Check GA4 property ID: '+s.ga4,'warn');
+    dlog('→ Analytics Data API enabled in Google Cloud?','warn');
   }
+  dbgUpdateSummary();
 }
 
-async function dbgTestAds(){
-  dlog('=== TESTING GOOGLE ADS API ===', 'head');
-  setDbgStat('ads','run');
-  const s = cfg();
-  dlog('Customer ID: '+s.adsId, 'dim');
+async function dbgAds(){
+  dlog('--- GOOGLE ADS API ---','head'); setDbg('ads','run');
+  const s=cfg(); dlog('Customer ID: '+s.adsId,'dim');
   try{
-    const r = await fetch('/api/google-ads?customerId='+s.adsId);
-    const d = await r.json();
-    if(d.note){
-      setDbgStat('ads','fail');
-      dlog('⚠ GOOGLE ADS: NEEDS DEVELOPER TOKEN', 'warn');
-      dlog('→ Go to ads.google.com (Manager Account) → Tools → API Centre', 'warn');
-      dlog('→ Apply for developer token', 'warn');
-      dlog('→ Add GOOGLE_ADS_DEV_TOKEN to Vercel environment variables', 'warn');
-      return;
-    }
-    if(d.error) throw new Error(d.error);
-    setDbgStat('ads','ok');
-    dlog('✓ GOOGLE ADS: CONNECTED', 'ok');
-    dlog('Total spend: £'+(d.totalSpend||0).toFixed(2), 'ok');
-    dlog('Total conversions: '+(d.totalConv||0).toFixed(0), 'ok');
-    dlog('Active campaigns: '+(d.campaigns||[]).length, 'ok');
-    (d.campaigns||[]).slice(0,5).forEach(c => dlog('  '+c.name+': £'+c.cost.toFixed(2)+' spend', 'dim'));
+    const r=await fetch('/api/google-ads?customerId='+s.adsId); const d=await r.json();
+    if(d.note){setDbg('ads','fail');dlog('⚠ Needs developer token in Vercel env vars','warn');dlog('GOOGLE_ADS_DEV_TOKEN not set','warn');return;}
+    if(d.error)throw new Error(d.error);
+    setDbg('ads','ok');
+    dlog('✓ Connected','ok');
+    dlog('Spend: £'+d.totalSpend.toFixed(2)+' | Clicks: '+d.totalClicks+' | Conv: '+d.totalConv.toFixed(0),'ok');
+    (d.campaigns||[]).slice(0,3).forEach(c=>dlog('  '+c.name+': £'+c.cost.toFixed(2),'dim'));
   }catch(e){
-    setDbgStat('ads','fail');
-    dlog('✗ GOOGLE ADS FAILED: '+e.message, 'err');
-    dlog('→ Developer token not set in Vercel env vars', 'warn');
-    dlog('→ Or not logged in with Google Manager Account', 'warn');
+    setDbg('ads','fail');dlog('✗ Failed: '+e.message,'err');
+    dlog('→ Add GOOGLE_ADS_DEV_TOKEN to Vercel env vars','warn');
   }
+  dbgUpdateSummary();
 }
 
-async function dbgTestShopify(){
-  dlog('=== TESTING SHOPIFY API ===', 'head');
-  setDbgStat('shopify','run');
-  const s = cfg();
-  dlog('Domain: '+s.shop, 'dim');
-  if(!s.token){
-    setDbgStat('shopify','fail');
-    dlog('✗ NO SHOPIFY TOKEN — add in Settings', 'err');
-    return;
-  }
+async function dbgShopify(){
+  dlog('--- SHOPIFY ---','head'); setDbg('shopify','run');
+  const s=cfg(); dlog('Domain: '+s.shop,'dim');
+  if(!s.token){setDbg('shopify','fail');dlog('✗ No token — add in Settings','err');dbgUpdateSummary();return;}
   try{
-    const r = await fetch('/api/shopify-live?domain='+s.shop+'&token='+s.token);
-    const d = await r.json();
-    if(d.error) throw new Error(d.error);
-    setDbgStat('shopify','ok');
-    dlog('✓ SHOPIFY: CONNECTED', 'ok');
-    dlog("Today's revenue: £"+(d.todayRevenue||0).toFixed(2)+' ('+d.todayOrders+' orders)', 'ok');
-    dlog('This week: £'+(d.weekRevenue||0).toFixed(2)+' ('+d.weekOrders+' orders)', 'ok');
-    dlog('Top product: '+(d.topProducts||[{title:'none'}])[0].title, 'info');
+    const r=await fetch('/api/shopify-live?domain='+s.shop+'&token='+s.token); const d=await r.json();
+    if(d.error)throw new Error(d.error);
+    setDbg('shopify','ok');
+    dlog('✓ Connected','ok');
+    dlog('Today: £'+d.todayRevenue.toFixed(2)+' ('+d.todayOrders+' orders) | Week: £'+d.weekRevenue.toFixed(2)+' ('+d.weekOrders+' orders)','ok');
+    if(d.topProducts&&d.topProducts[0])dlog('Top seller: '+d.topProducts[0].title+' ('+d.topProducts[0].quantity+' sold)','info');
   }catch(e){
-    setDbgStat('shopify','fail');
-    dlog('✗ SHOPIFY FAILED: '+e.message, 'err');
-    dlog('→ Check access token in Settings (starts with shpat_)', 'warn');
-    dlog('→ Check store domain: '+s.shop, 'warn');
+    setDbg('shopify','fail');dlog('✗ Failed: '+e.message,'err');
+    dlog('→ Check shpat_ token in Settings','warn');
   }
+  dbgUpdateSummary();
 }
 
-async function dbgTestClaude(){
-  dlog('=== TESTING CLAUDE AI API ===', 'head');
-  setDbgStat('claude','run');
-  const s = cfg();
-  if(!s.key||!s.key.startsWith('sk-')){
-    setDbgStat('claude','fail');
-    dlog('✗ NO API KEY — add Anthropic API key in Settings', 'err');
-    return;
-  }
-  dlog('Key: '+s.key.substring(0,18)+'...', 'dim');
+async function dbgClaude(){
+  dlog('--- CLAUDE AI ---','head'); setDbg('claude','run');
+  const s=cfg();
+  if(!s.key||!s.key.startsWith('sk-')){setDbg('claude','fail');dlog('✗ No API key in Settings','err');dbgUpdateSummary();return;}
   try{
-    const start = Date.now();
-    const r = await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({apiKey:s.key,model:'claude-sonnet-4-20250514',max_tokens:30,
-        messages:[{role:'user',content:'Reply with exactly: CC_OK'}]})});
-    const d = await r.json();
-    const ms = Date.now()-start;
-    if(d.error) throw new Error(d.error.message||JSON.stringify(d.error));
-    const text = d.content?.[0]?.text||'';
-    setDbgStat('claude','ok');
-    dlog('✓ CLAUDE AI: WORKING', 'ok');
-    dlog('Response: "'+text+'"', text.includes('CC_OK')?'ok':'warn');
-    dlog('Latency: '+ms+'ms', 'ok');
-    dlog('Model: '+(d.model||'—'), 'dim');
-    dlog('Tokens used: in='+(d.usage?.input_tokens||0)+' out='+(d.usage?.output_tokens||0), 'dim');
+    const t=Date.now();
+    const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({apiKey:s.key,model:'claude-sonnet-4-20250514',max_tokens:20,
+        messages:[{role:'user',content:'Say OK'}]})});
+    const d=await r.json();
+    if(d.error)throw new Error(d.error.message||JSON.stringify(d.error));
+    setDbg('claude','ok');
+    dlog('✓ Connected — '+d.content[0].text+' ('+( Date.now()-t)+'ms)','ok');
+    dlog('Tokens: in='+d.usage.input_tokens+' out='+d.usage.output_tokens,'dim');
   }catch(e){
-    setDbgStat('claude','fail');
-    dlog('✗ CLAUDE FAILED: '+e.message, 'err');
-    dlog('→ Check API key is correct and has billing', 'warn');
+    setDbg('claude','fail');dlog('✗ Failed: '+e.message,'err');
+    dlog('→ Check API key has billing credits','warn');
   }
+  dbgUpdateSummary();
 }
 
-function dbgShowEnv(){
-  dlog('=== CURRENT CONFIGURATION ===', 'head');
-  const s = cfg();
-  dlog('Shopify domain: '+s.shop, s.shop?'ok':'err');
-  dlog('Shopify token: '+(s.token?s.token.substring(0,12)+'...':'NOT SET'), s.token?'ok':'err');
-  dlog('Claude API key: '+(s.key?s.key.substring(0,18)+'...':'NOT SET'), s.key?'ok':'err');
-  dlog('GA4 Property ID: '+s.ga4, s.ga4?'ok':'warn');
-  dlog('Ads Customer ID: '+s.adsId, s.adsId?'ok':'warn');
-  dlog('Search Console URL: '+s.site, s.site?'ok':'warn');
-  dlog('Ads budget: £'+s.budget+'/month', 'dim');
+function dbgConfig(){
+  dlog('--- CONFIG ---','head');
+  const s=cfg();
+  dlog('Shopify: '+s.shop, s.shop?'ok':'err');
+  dlog('Token: '+(s.token?s.token.substring(0,12)+'...':'NOT SET'), s.token?'ok':'err');
+  dlog('Claude key: '+(s.key?s.key.substring(0,18)+'...':'NOT SET'), s.key?'ok':'err');
+  dlog('GA4: '+s.ga4+' | Ads ID: '+s.adsId, 'info');
+  dlog('SC URL: '+s.site, 'info');
 }
 
-function dbgShowLiveData(){
-  dlog('=== LIVE DATA STATUS ===', 'head');
-  dlog('Search Console: '+(liveData.sc?'LOADED ('+((liveData.sc.lowCTR||[]).length)+' opportunities)':'NOT LOADED'), liveData.sc?'ok':'warn');
-  dlog('Analytics 4: '+(liveData.ga?'LOADED ('+((liveData.ga.sessions||0).toLocaleString())+' sessions)':'NOT LOADED'), liveData.ga?'ok':'warn');
-  dlog('Google Ads: '+(liveData.ads?'LOADED ('+((liveData.ads.campaigns||[]).length)+' campaigns'+(liveData.ads.fromCSV?' — CSV upload':'— live API')+')':'NOT LOADED'), liveData.ads?'ok':'warn');
-  dlog('Shopify: '+(liveData.shopify?'LOADED (£'+(liveData.shopify.weekRevenue||0).toFixed(0)+' this week)':'NOT LOADED'), liveData.shopify?'ok':'warn');
-  dlog('AI Analysis: '+(liveData.analysis?'GENERATED ('+liveData.analysis.length+' chars)':'NOT YET RUN'), liveData.analysis?'ok':'warn');
+function dbgData(){
+  dlog('--- LIVE DATA ---','head');
+  dlog('SC: '+(liveData.sc?'✓ loaded ('+((liveData.sc.lowCTR||[]).length)+' opps)':'✗ not loaded'), liveData.sc?'ok':'warn');
+  dlog('GA4: '+(liveData.ga?'✓ loaded ('+((liveData.ga.sessions||0).toLocaleString())+' sessions)':'✗ not loaded'), liveData.ga?'ok':'warn');
+  dlog('Ads: '+(liveData.ads?'✓ loaded ('+((liveData.ads.campaigns||[]).length)+' camps'+(liveData.ads.fromCSV?' CSV':'')+')'  :'✗ not loaded'), liveData.ads?'ok':'warn');
+  dlog('Shopify: '+(liveData.shopify?'✓ £'+liveData.shopify.weekRevenue.toFixed(0)+' this week':'✗ not loaded'), liveData.shopify?'ok':'warn');
+  dlog('Analysis: '+(liveData.analysis?'✓ generated':'✗ not run'), liveData.analysis?'ok':'warn');
 }
 
-async function runAllTests(){
-  clearDebugLog();
-  dlog('Running all tests...', 'info');
-  if(!debugOpen){toggleDebug();}
-  await dbgTestAuth();
-  await new Promise(r=>setTimeout(r,300));
-  await dbgTestClaude();
-  await new Promise(r=>setTimeout(r,300));
-  await dbgTestShopify();
-  await new Promise(r=>setTimeout(r,300));
-  await dbgTestSC();
-  await new Promise(r=>setTimeout(r,300));
-  await dbgTestGA();
-  await new Promise(r=>setTimeout(r,300));
-  await dbgTestAds();
-  dlog('=== ALL TESTS COMPLETE ===', 'head');
-  updateDebugSummary();
+async function dbgRunAll(){
+  if(!dbgOpen) dbgToggle();
+  dbgClear();
+  dlog('Running all tests...','info');
+  await dbgAuth(); await new Promise(r=>setTimeout(r,200));
+  await dbgClaude(); await new Promise(r=>setTimeout(r,200));
+  await dbgShopify(); await new Promise(r=>setTimeout(r,200));
+  await dbgSC(); await new Promise(r=>setTimeout(r,200));
+  await dbgGA(); await new Promise(r=>setTimeout(r,200));
+  await dbgAds();
+  dlog('--- ALL DONE ---','head');
 }
 </script>
-
 </body>
 </html>
