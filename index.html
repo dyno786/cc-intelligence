@@ -193,6 +193,23 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
 .toast.success{border-color:var(--teal);color:var(--teal)}
 .toast.error{border-color:var(--red);color:var(--red)}
 
+/* CONTENT STUDIO */
+.studio-mode-btn{flex:1;min-width:110px;padding:12px 14px;font-size:12px;font-weight:600;color:var(--ink3);border:none;background:none;cursor:pointer;font-family:inherit;transition:all .2s;border-bottom:3px solid transparent;white-space:nowrap}
+.studio-mode-btn.active{color:var(--teal);background:var(--teal-light);border-bottom-color:var(--teal)}
+.studio-mode-btn:hover:not(.active){color:var(--ink);background:var(--card2)}
+.studio-screen{display:none}.studio-screen.active{display:block}
+.studio-pill{background:var(--card);border:2px solid var(--border2);color:var(--ink2);border-radius:var(--r);padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
+.studio-pill:hover{border-color:var(--teal);color:var(--teal)}
+.studio-pill.active{background:var(--teal);border-color:var(--teal);color:#fff}
+.studio-p-card{background:var(--card);border:2px solid var(--border);border-radius:var(--r);padding:8px;cursor:pointer;transition:all .15s;text-align:center}
+.studio-p-card:hover,.studio-p-card.sel{border-color:var(--teal);background:var(--teal-light)}
+.studio-sug-card{background:var(--card);border-radius:var(--r2);box-shadow:var(--shadow);padding:10px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:10px;border:2px solid transparent}
+.studio-sug-card:hover,.studio-sug-card.sel{border-color:var(--teal);background:var(--teal-light);transform:translateY(-1px)}
+.studio-result-sec{background:var(--card);border-radius:var(--r2);box-shadow:var(--shadow);overflow:hidden;margin-bottom:12px}
+.studio-result-hdr{background:linear-gradient(135deg,var(--teal),var(--teal2));padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
+.studio-result-hdr h4{color:#fff;font-size:13px;font-weight:700}
+.studio-result-body{padding:14px 16px}
+
 /* SETTINGS */
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
 .modal-bg.open{display:flex}
@@ -293,6 +310,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
     <button class="tab-btn" id="tab-competitors" onclick="showTab('competitors',this);loadCompetitors()"><span>🏪 Competitors</span></button>
     <button class="tab-btn" id="tab-calendar" onclick="showTab('calendar',this)"><span>📅 Content</span></button>
     <button class="tab-btn" id="tab-history" onclick="showTab('history',this)"><span>📊 History</span></button>
+    <button class="tab-btn" id="tab-studio" onclick="showTab('studio',this)"><span>✂ Content Studio</span></button>
   </div>
 
   <!-- OVERVIEW TAB -->
@@ -664,6 +682,109 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
       </table>
     </div>
   </div>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- CONTENT STUDIO TAB -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div class="screen" id="screen-studio">
+
+    <!-- MODE SWITCHER -->
+    <div style="display:flex;background:var(--card);border-radius:var(--r2);box-shadow:var(--shadow);margin-bottom:16px;border:1px solid var(--border);overflow-x:auto;scrollbar-width:none">
+      <button class="studio-mode-btn active" id="sm-product" onclick="studioMode('product',this)">🛍️ Product Blog</button>
+      <button class="studio-mode-btn" id="sm-keyword" onclick="studioMode('keyword',this)">🔍 Keyword Blog</button>
+      <button class="studio-mode-btn" id="sm-collection" onclick="studioMode('collection',this)">📦 Collection</button>
+      <button class="studio-mode-btn" id="sm-social" onclick="studioMode('social',this)">📱 Social Only</button>
+      <button class="studio-mode-btn" id="sm-log" onclick="studioMode('log',this);renderStudioLog()">📋 Post Log</button>
+    </div>
+
+    <!-- ── PRODUCT BLOG ── -->
+    <div class="studio-screen active" id="ss-product">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);margin-bottom:8px" id="studio-sug-label">Suggested Today</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px" id="studio-sug-grid"><div style="text-align:center;padding:20px;color:var(--ink3);grid-column:1/-1"><div class="spin" style="width:24px;height:24px;border-width:3px;margin:0 auto 8px"></div></div></div>
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);margin-bottom:8px">All Products</div>
+      <div style="position:relative;margin-bottom:10px">
+        <span style="position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--ink3);pointer-events:none">🔍</span>
+        <input style="width:100%;padding:11px 14px 11px 38px;background:var(--card);border:2px solid var(--border2);border-radius:var(--r2);font-size:14px;font-family:inherit;color:var(--ink);outline:none;box-shadow:var(--shadow)" type="text" placeholder="Search products…" oninput="studioFilterProds(this.value)" onfocus="this.style.borderColor='var(--teal)'" onblur="this.style.borderColor='var(--border2)'">
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;max-height:240px;overflow-y:auto;margin-bottom:10px" id="studio-prod-grid"></div>
+      <div style="text-align:center;margin-bottom:16px"><button class="copy-btn-dk" onclick="studioLoadMore()">Load more ↓</button></div>
+      <div style="display:flex;gap:8px;margin-bottom:18px">
+        <input class="form-inp" type="text" id="studio-url-inp" placeholder="Or paste product URL…">
+        <button class="copy-btn-dk" onclick="studioLoadUrl()" style="white-space:nowrap">Load</button>
+      </div>
+      <div id="studio-sel-bar" style="display:none;background:var(--card);border:2px solid var(--teal);border-radius:var(--r2);padding:14px 16px;align-items:center;gap:14px;margin-bottom:14px;box-shadow:var(--shadow2)">
+        <img id="studio-sel-img" src="" alt="" style="width:50px;height:50px;border-radius:10px;object-fit:cover;flex-shrink:0;display:none">
+        <div style="width:50px;height:50px;border-radius:10px;background:var(--teal-light);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0" id="studio-sel-ph">✂</div>
+        <div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;overflow:hidden;white-space:nowrap;text-overflow:ellipsis" id="studio-sel-name"></div><div style="font-size:12px;color:var(--teal);font-weight:700;margin-top:2px" id="studio-sel-price"></div></div>
+        <button class="copy-btn-dk" onclick="studioClearSel()">Change</button>
+      </div>
+      <button id="studio-prod-btn" onclick="studioGenProduct()" style="display:none;width:100%;background:var(--teal);color:#fff;border:none;border-radius:var(--r2);padding:16px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;flex-direction:column;align-items:center;margin-bottom:12px">
+        Generate Today's Content
+        <span style="font-size:12px;font-weight:400;opacity:.8;margin-top:3px">Blog · 3 GBP posts · Instagram · Facebook · Review request · ~30 sec</span>
+      </button>
+      <div id="studio-prod-loading" style="display:none;text-align:center;padding:40px;background:var(--card);border-radius:var(--r2);box-shadow:var(--shadow);margin-bottom:12px">
+        <div class="spin" style="margin:0 auto 16px"></div>
+        <div style="font-size:16px;font-weight:700;margin-bottom:6px">Generating content…</div>
+        <div style="font-size:13px;color:var(--ink2)" id="studio-prod-msg">Writing SEO blog post…</div>
+      </div>
+      <div id="studio-prod-results"></div>
+    </div>
+
+    <!-- ── KEYWORD BLOG ── -->
+    <div class="studio-screen" id="ss-keyword">
+      <div class="ai-card" style="margin-bottom:14px">
+        <div class="ai-card-hdr"><h3>🔍 Write a Blog from a Keyword</h3></div>
+        <div style="padding:16px">
+          <div class="form-grp"><label class="form-lbl">Target Keyword *</label><input class="form-inp" type="text" id="sk-keyword" placeholder="e.g. cherish french curl braid, edge control natural hair"><div class="form-hint">This becomes your H1, meta title and primary keyword to rank for in Google</div></div>
+          <div class="form-grp"><label class="form-lbl">Blog Type</label><div style="display:flex;gap:7px;flex-wrap:wrap" id="sk-type-pills"><button class="studio-pill active" data-val="how-to" onclick="studioSetPill(this,'sk-type-pills')">How-To Guide</button><button class="studio-pill" data-val="buying-guide" onclick="studioSetPill(this,'sk-type-pills')">Buying Guide</button><button class="studio-pill" data-val="top-tips" onclick="studioSetPill(this,'sk-type-pills')">Top Tips</button><button class="studio-pill" data-val="product-review" onclick="studioSetPill(this,'sk-type-pills')">Product Review</button><button class="studio-pill" data-val="comparison" onclick="studioSetPill(this,'sk-type-pills')">Comparison</button><button class="studio-pill" data-val="local-guide" onclick="studioSetPill(this,'sk-type-pills')">Leeds Local</button></div></div>
+          <div class="form-grp"><label class="form-lbl">Related Product (optional)</label><input class="form-inp" type="text" id="sk-product" placeholder="e.g. Cherish Spiral Curl 22&quot; — leave blank for general blog"></div>
+          <div class="form-grp"><label class="form-lbl">Search Console Context (optional)</label><input class="form-inp" type="text" id="sk-context" placeholder="e.g. 1,519 impressions, position 7.6, 1.18% CTR — paste from Keywords tab above"></div>
+          <div class="form-grp"><label class="form-lbl">Target Audience</label><div style="display:flex;gap:7px;flex-wrap:wrap" id="sk-audience-pills"><button class="studio-pill active" data-val="women" onclick="studioSetPill(this,'sk-audience-pills')">👩 Women</button><button class="studio-pill" data-val="men" onclick="studioSetPill(this,'sk-audience-pills')">👨 Men</button><button class="studio-pill" data-val="kids" onclick="studioSetPill(this,'sk-audience-pills')">👶 Kids</button><button class="studio-pill" data-val="everyone" onclick="studioSetPill(this,'sk-audience-pills')">✂ Everyone</button></div></div>
+          <button onclick="studioGenKeyword()" style="width:100%;background:var(--teal);color:#fff;border:none;border-radius:var(--r2);padding:15px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">Generate SEO Blog<div style="font-size:11px;font-weight:400;opacity:.8;margin-top:3px">Full blog HTML · meta · GBP post · social captions · ~25 sec</div></button>
+        </div>
+      </div>
+      <div id="sk-loading" style="display:none;text-align:center;padding:40px;background:var(--card);border-radius:var(--r2);box-shadow:var(--shadow)"><div class="spin" style="margin:0 auto 16px"></div><div style="font-size:16px;font-weight:700;margin-bottom:6px">Writing SEO blog…</div><div style="font-size:13px;color:var(--ink2)" id="sk-msg">Researching keyword intent…</div></div>
+      <div id="sk-results"></div>
+    </div>
+
+    <!-- ── COLLECTION ── -->
+    <div class="studio-screen" id="ss-collection">
+      <div class="ai-card" style="margin-bottom:14px">
+        <div class="ai-card-hdr"><h3>📦 Collection / Category Page Content</h3></div>
+        <div style="padding:16px">
+          <div class="form-grp"><label class="form-lbl">Collection Name *</label><input class="form-inp" type="text" id="sc-name" placeholder="e.g. Relaxers, Synthetic Wigs, Hair Extensions, Edge Control"></div>
+          <div class="form-grp"><label class="form-lbl">Content Focus</label><div style="display:flex;gap:7px;flex-wrap:wrap" id="sc-focus-pills"><button class="studio-pill active" data-val="seo-description" onclick="studioSetPill(this,'sc-focus-pills')">SEO Description</button><button class="studio-pill" data-val="seasonal-promo" onclick="studioSetPill(this,'sc-focus-pills')">Seasonal Promo</button><button class="studio-pill" data-val="new-arrivals" onclick="studioSetPill(this,'sc-focus-pills')">New Arrivals</button><button class="studio-pill" data-val="brand-spotlight" onclick="studioSetPill(this,'sc-focus-pills')">Brand Spotlight</button></div></div>
+          <button onclick="studioGenCollection()" style="width:100%;background:var(--teal);color:#fff;border:none;border-radius:var(--r2);padding:15px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">Generate Collection Content<div style="font-size:11px;font-weight:400;opacity:.8;margin-top:3px">SEO description · meta · GBP posts · Instagram · Facebook · ~20 sec</div></button>
+        </div>
+      </div>
+      <div id="sc-loading" style="display:none;text-align:center;padding:40px;background:var(--card);border-radius:var(--r2);box-shadow:var(--shadow)"><div class="spin" style="margin:0 auto 16px"></div><div style="font-size:16px;font-weight:700">Writing collection content…</div></div>
+      <div id="sc-results"></div>
+    </div>
+
+    <!-- ── SOCIAL ONLY ── -->
+    <div class="studio-screen" id="ss-social">
+      <div class="ai-card" style="margin-bottom:14px">
+        <div class="ai-card-hdr"><h3>📱 Quick Social Posts</h3></div>
+        <div style="padding:16px">
+          <div class="form-grp"><label class="form-lbl">What to post about *</label><textarea class="form-inp" id="so-topic" rows="3" placeholder="e.g. Big restock of Schwarzkopf Live dyes — new summer shades in all 3 branches"></textarea></div>
+          <div class="form-grp"><label class="form-lbl">Post Type</label><div style="display:flex;gap:7px;flex-wrap:wrap" id="so-type-pills"><button class="studio-pill active" data-val="product-promo" onclick="studioSetPill(this,'so-type-pills')">Product Promo</button><button class="studio-pill" data-val="restock-alert" onclick="studioSetPill(this,'so-type-pills')">Restock Alert</button><button class="studio-pill" data-val="hair-tip" onclick="studioSetPill(this,'so-type-pills')">Hair Tip</button><button class="studio-pill" data-val="sale" onclick="studioSetPill(this,'so-type-pills')">Sale / Offer</button><button class="studio-pill" data-val="community" onclick="studioSetPill(this,'so-type-pills')">Community</button></div></div>
+          <div class="form-grp"><label class="form-lbl">Tone</label><div style="display:flex;gap:7px;flex-wrap:wrap" id="so-tone-pills"><button class="studio-pill active" data-val="warm-community" onclick="studioSetPill(this,'so-tone-pills')">Warm & Community</button><button class="studio-pill" data-val="excited" onclick="studioSetPill(this,'so-tone-pills')">Excited & Energetic</button><button class="studio-pill" data-val="informative" onclick="studioSetPill(this,'so-tone-pills')">Informative</button><button class="studio-pill" data-val="funny-viral" onclick="studioSetPill(this,'so-tone-pills')">Funny & Viral</button></div></div>
+          <button onclick="studioGenSocial()" style="width:100%;background:var(--teal);color:#fff;border:none;border-radius:var(--r2);padding:15px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">Generate Social Posts<div style="font-size:11px;font-weight:400;opacity:.8;margin-top:3px">Instagram · Facebook · 3 GBP posts · WhatsApp broadcast · ~15 sec</div></button>
+        </div>
+      </div>
+      <div id="so-loading" style="display:none;text-align:center;padding:40px;background:var(--card);border-radius:var(--r2);box-shadow:var(--shadow)"><div class="spin" style="margin:0 auto 16px"></div><div style="font-size:16px;font-weight:700">Writing social posts…</div></div>
+      <div id="so-results"></div>
+    </div>
+
+    <!-- ── POST LOG ── -->
+    <div class="studio-screen" id="ss-log">
+      <div class="ai-card">
+        <div class="ai-card-hdr"><h3>📋 Post Log</h3><div style="display:flex;gap:8px"><button class="copy-btn" onclick="studioExportLog()">⬇ Export</button><button class="copy-btn" onclick="studioClearLog()" style="border-color:var(--red);color:var(--red)">🗑 Clear</button></div></div>
+        <div class="ai-card-body" id="studio-log-container" style="font-size:13px">No posts logged yet</div>
+      </div>
+    </div>
+
+  </div><!-- /screen-studio -->
 
 </div>
 
@@ -1744,6 +1865,358 @@ function getVerdict(campaign, avgOrderValue){
 // ── INIT ──────────────────────────────────────────────────────────────────────
 applyTheme(_theme);
 init();
+
+// ── CONTENT STUDIO ────────────────────────────────────────────────────────────
+let studioProds = [], studioFilteredProds = [], studioPage = 0, studioSelProd = null;
+const STUDIO_PAGE = 50;
+
+const STUDIO_BRAND = `CC Hair & Beauty, Leeds, UK. Trading since 1979. 9,000+ products, 1,000+ brands. Free UK delivery over £50.
+3 Leeds stores — ONLY Leeds Afro hair retailer with e-commerce:
+- Chapeltown Road: 121-129 Chapeltown Road, Leeds LS7 3DU | 0113 262 8852 | Mon-Sun 9am-8pm
+- Roundhay Road: 256-258 Roundhay Road, Leeds LS8 5RL | 0113 249 5562 | Mon-Sun 9am-8pm
+- City Centre: 1-19 New York Street, Leeds | 0113 242 6262 | Mon-Sun 9am-7pm
+- Online: cchairandbeauty.com
+BRAND VOICE: Warm, community-focused, knowledgeable. Never corporate.
+SEO RULES: Blog 500-700 words proper HTML (h2 h3 p strong ul li). Meta title max 60 chars. Meta desc max 155 chars. GBP posts max 1500 chars NO hashtags.
+SOCIAL: All Instagram/Facebook MUST end: "📍 Chapeltown Road · Roundhay Road · City Centre · cchairandbeauty.com"
+NEVER: name competitors, use "look no further" or "one stop shop", invent product claims.`;
+
+function studioMode(mode, btn) {
+  document.querySelectorAll('.studio-mode-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.studio-screen').forEach(s=>s.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  document.getElementById('ss-'+mode).classList.add('active');
+  if(mode==='product' && studioProds.length===0) studioLoadProducts();
+}
+
+function studioSetPill(btn, groupId) {
+  document.querySelectorAll(`#${groupId} .studio-pill`).forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function studioGetPill(groupId) {
+  const a=document.querySelector(`#${groupId} .studio-pill.active`);
+  return a ? a.dataset.val : '';
+}
+
+// Load products into studio
+async function studioLoadProducts() {
+  const s=cfg();
+  // Reuse cached products from main dashboard if available
+  const cached=localStorage.getItem('cc_prods_v2')||localStorage.getItem('cc_products');
+  if(cached) { try { studioProds=JSON.parse(cached); studioFilteredProds=[...studioProds]; studioPage=0; studioRenderProdPage(); studioRenderSuggested(); return; } catch(e){} }
+  if(!s.token||!s.shop) { studioProds=liveData.shopify?.topProducts||[]; studioFilteredProds=[...studioProds]; studioRenderProdPage(); return; }
+  try {
+    const r=await fetch(`/api/shopify-live?domain=${s.shop}&token=${s.token}`);
+    const d=await r.json();
+    studioProds=(d.topProducts||[]);
+    studioFilteredProds=[...studioProds]; studioPage=0;
+    studioRenderProdPage(); studioRenderSuggested();
+  } catch(e) {}
+}
+
+function studioRenderProdPage() {
+  const g=document.getElementById('studio-prod-grid');
+  if(!g) return;
+  const page=studioFilteredProds.slice(studioPage*STUDIO_PAGE,(studioPage+1)*STUDIO_PAGE);
+  if(studioPage===0) g.innerHTML='';
+  if(!page.length&&studioPage===0){g.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--ink3);font-size:13px">No products — add Shopify token in ⚙ Settings</div>';return;}
+  page.forEach(p=>{
+    const card=document.createElement('div');
+    card.className='studio-p-card'; card.dataset.sid=p.id;
+    card.innerHTML=(p.image?`<img src="${p.image}" alt="" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;background:var(--bg);margin-bottom:5px" onerror="this.style.display='none'">`:`<div style="width:100%;aspect-ratio:1;background:var(--teal-light);border-radius:8px;margin-bottom:5px;display:flex;align-items:center;justify-content:center;font-size:24px">✂</div>`)+
+      `<div style="font-size:11px;color:var(--ink);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${p.title||''}</div>`+
+      `<div style="font-size:12px;color:var(--teal);font-weight:700;margin-top:3px">${p.price||''}</div>`;
+    card.onclick=()=>studioSelectProd(p);
+    g.appendChild(card);
+  });
+}
+
+function studioRenderSuggested() {
+  const g=document.getElementById('studio-sug-grid');
+  if(!g||!studioProds.length) return;
+  const picks=studioProds.slice(0,3);
+  const badges=["Today's Pick","High Traffic","Latest Added"];
+  g.innerHTML='';
+  picks.forEach((p,i)=>{
+    const card=document.createElement('div');
+    card.className='studio-sug-card'; card.dataset.sid=p.id;
+    card.innerHTML=(p.image?`<img src="${p.image}" style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">`:`<div style="width:44px;height:44px;border-radius:8px;background:var(--teal-light);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px">✂</div>`)+
+      `<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${p.title||''}</div><span style="display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;color:#fff;background:var(--yellow2);border-radius:20px;padding:1px 8px;margin-top:3px">${badges[i]}</span></div>`;
+    card.onclick=()=>studioSelectProd(p);
+    g.appendChild(card);
+  });
+}
+
+function studioFilterProds(q) {
+  const ql=q.toLowerCase();
+  studioFilteredProds=studioProds.filter(p=>(p.title||'').toLowerCase().includes(ql)||(p.vendor||'').toLowerCase().includes(ql));
+  studioPage=0; studioRenderProdPage();
+}
+function studioLoadMore(){studioPage++;studioRenderProdPage();}
+
+function studioSelectProd(p) {
+  studioSelProd=p;
+  document.querySelectorAll('.studio-p-card,.studio-sug-card').forEach(c=>c.classList.remove('sel'));
+  document.querySelectorAll(`[data-sid="${p.id}"]`).forEach(c=>c.classList.add('sel'));
+  const img=document.getElementById('studio-sel-img');
+  const ph=document.getElementById('studio-sel-ph');
+  if(p.image){img.src=p.image;img.style.display='block';if(ph)ph.style.display='none';}
+  else{if(img)img.style.display='none';if(ph)ph.style.display='flex';}
+  document.getElementById('studio-sel-name').textContent=p.title||'';
+  document.getElementById('studio-sel-price').textContent=p.price||'';
+  const bar=document.getElementById('studio-sel-bar');
+  const btn=document.getElementById('studio-prod-btn');
+  if(bar){bar.style.display='flex';}
+  if(btn){btn.style.display='flex';}
+  document.getElementById('studio-prod-results').innerHTML='';
+}
+
+function studioClearSel() {
+  studioSelProd=null;
+  document.getElementById('studio-sel-bar').style.display='none';
+  document.getElementById('studio-prod-btn').style.display='none';
+  document.querySelectorAll('.studio-p-card,.studio-sug-card').forEach(c=>c.classList.remove('sel'));
+}
+
+async function studioLoadUrl() {
+  const url=document.getElementById('studio-url-inp').value.trim();
+  if(!url) return;
+  const handle=url.includes('/products/')?url.split('/products/')[1].split('?')[0]:url;
+  const title=handle.replace(/-/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
+  studioSelectProd({id:handle,title,price:'',image:'',tags:'',productType:'Hair Care',vendor:'',description:'',handle});
+  document.getElementById('studio-url-inp').value='';
+}
+
+// Studio Claude call
+async function studioCallClaude(system, user, maxTokens=4000) {
+  const s=cfg();
+  if(!s.key) { toast('Add Claude API key in ⚙ Settings','error'); openSettings(); throw new Error('No API key'); }
+  const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apiKey:s.key,model:'claude-sonnet-4-20250514',max_tokens:maxTokens,system,messages:[{role:'user',content:user}]})});
+  const d=await r.json();
+  if(d.error) throw new Error(d.error.message||JSON.stringify(d.error));
+  const raw=d.content?.[0]?.text||'';
+  const clean=raw.replace(/^```json\s*/i,'').replace(/^```\s*/i,'').replace(/\s*```\s*$/i,'').trim();
+  const m=clean.match(/\{[\s\S]*\}/);
+  if(!m) throw new Error('No JSON in response');
+  return JSON.parse(m[0]);
+}
+
+// Result section builder
+function studioResultSec(title, fields) {
+  const visible=fields.filter(f=>f.content&&String(f.content).trim());
+  if(!visible.length) return '';
+  return `<div class="studio-result-sec"><div class="studio-result-hdr"><h4>${title}</h4></div><div class="studio-result-body">${
+    visible.map(f=>{
+      const escaped=(f.content||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      const lbl=f.label.replace(/[①②③④⑤⑥⑦⑧]/g,'').split('(')[0].trim();
+      return `<div style="margin-bottom:12px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--ink3);margin-bottom:6px;display:flex;justify-content:space-between"><span>${f.label}</span>${f.badge?`<span style="font-size:10px;color:var(--teal);font-weight:700;background:var(--teal-light);border-radius:20px;padding:1px 8px">${f.badge}</span>`:''}</div><div style="background:var(--card);border:1.5px solid var(--border2);border-radius:var(--r);padding:10px 12px;font-size:12px;line-height:1.75;color:var(--ink2);max-height:200px;overflow-y:auto;white-space:pre-wrap;font-family:'DM Mono',monospace">${escaped}</div><button style="width:100%;background:var(--teal);color:#fff;border:none;padding:9px 14px;font-size:12px;border-radius:var(--r);font-family:inherit;cursor:pointer;font-weight:700;margin-top:6px" data-copy="${encodeURIComponent(f.content||'')}" onclick="const t=decodeURIComponent(this.dataset.copy);navigator.clipboard.writeText(t).then(()=>{this.textContent='✓ Copied!';setTimeout(()=>this.textContent='⎘ Copy ${lbl.replace(/'/g,"\\'")}',2000)})">⎘ Copy ${lbl}</button></div>`;
+    }).join('')
+  }</div></div>`;
+}
+
+// ── GENERATE: PRODUCT ────────────────────────────────────────────────────────
+async function studioGenProduct() {
+  if(!studioSelProd) return;
+  document.getElementById('studio-prod-btn').style.display='none';
+  document.getElementById('studio-sel-bar').style.display='none';
+  document.getElementById('studio-prod-loading').style.display='block';
+  document.getElementById('studio-prod-results').innerHTML='';
+  const msgs=['Writing SEO blog post…','Creating 3 GBP posts…','Writing Instagram & Facebook…','Generating review request…'];
+  let mi=0; const iv=setInterval(()=>{const el=document.getElementById('studio-prod-msg');if(el&&mi<msgs.length)el.textContent=msgs[mi++];},4000);
+  try {
+    const p=studioSelProd;
+    const c=await studioCallClaude(
+      `You are the content generator for ${STUDIO_BRAND}\nOUTPUT: Return ONLY valid JSON:\n{"blog_meta_title":"max 60 chars","blog_meta_description":"max 155 chars","blog_focus_keyword":"string","blog_excerpt":"1-2 sentences","blog_tags":"comma,separated","blog_alt_text":"SEO alt","blog_html":"600-700 word HTML blog","gbp_chapeltown":"max 1500 chars no hashtags","gbp_roundhay":"max 1500 chars no hashtags","gbp_city_centre":"max 1500 chars no hashtags","instagram_caption":"under 150 words no URL ends with question all 3 branches","instagram_hashtags":"20 hashtags #cchairandbeauty first","facebook_post":"conversational all 3 branches","review_request_whatsapp":"warm 2-3 sentence WhatsApp","review_request_instore":"verbal till script","menu_tags":["array"]}`,
+      `Generate all content for:\nProduct: ${p.title}\nPrice: ${p.price}\nBrand: ${p.vendor}\nType: ${p.productType}\nTags: ${p.tags}\nDescription: ${p.description}\nURL: https://cchairandbeauty.com/products/${p.handle}`
+    );
+    clearInterval(iv);
+    studioSaveLog(p, c, 'product');
+    document.getElementById('studio-prod-loading').style.display='none';
+    document.getElementById('studio-sel-bar').style.display='flex';
+    document.getElementById('studio-prod-btn').style.display='flex';
+    document.getElementById('studio-prod-results').innerHTML=
+      studioResultSec('📝 Blog Post',[
+        {label:'① Meta Title',content:c.blog_meta_title,badge:(c.blog_meta_title||'').length+'/60'},
+        {label:'② Meta Description',content:c.blog_meta_description,badge:(c.blog_meta_description||'').length+'/155'},
+        {label:'③ Focus Keyword',content:c.blog_focus_keyword},
+        {label:'④ Blog HTML (paste in Shopify <> mode)',content:c.blog_html},
+        {label:'⑤ Excerpt',content:c.blog_excerpt},
+        {label:'⑥ Tags',content:c.blog_tags},
+        {label:'⑦ Image Alt Text',content:c.blog_alt_text},
+      ])+
+      studioResultSec('📍 Google Business Profile',[
+        {label:'Chapeltown LS7',content:c.gbp_chapeltown,badge:(c.gbp_chapeltown||'').length+'/1500'},
+        {label:'Roundhay LS8',content:c.gbp_roundhay,badge:(c.gbp_roundhay||'').length+'/1500'},
+        {label:'City Centre',content:c.gbp_city_centre,badge:(c.gbp_city_centre||'').length+'/1500'},
+      ])+
+      studioResultSec('📱 Social Media',[
+        {label:'Instagram Caption',content:c.instagram_caption},
+        {label:'Instagram Hashtags (post as first comment)',content:c.instagram_hashtags},
+        {label:'Facebook Post',content:c.facebook_post},
+      ])+
+      studioResultSec('⭐ Review Request',[
+        {label:'WhatsApp Message',content:c.review_request_whatsapp},
+        {label:'In-Store Verbal Script',content:c.review_request_instore},
+      ])+
+      (c.menu_tags?.length?`<div style="background:var(--card);border-radius:var(--r2);padding:12px 14px;box-shadow:var(--shadow);margin-bottom:12px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ink3);margin-bottom:8px">Shopify Tags</div><div style="display:flex;flex-wrap:wrap;gap:5px">${(Array.isArray(c.menu_tags)?c.menu_tags:String(c.menu_tags).split(',')).map(t=>`<span style="font-size:12px;background:var(--teal-light);border:1px solid var(--teal);color:var(--teal);border-radius:20px;padding:3px 12px;font-weight:600">${t.trim()}</span>`).join('')}</div></div>`:'');
+    toast('Content generated ✓','success');
+  } catch(e) {
+    clearInterval(iv);
+    document.getElementById('studio-prod-loading').style.display='none';
+    document.getElementById('studio-sel-bar').style.display='flex';
+    document.getElementById('studio-prod-btn').style.display='flex';
+    toast('Error: '+e.message,'error');
+  }
+}
+
+// ── GENERATE: KEYWORD ────────────────────────────────────────────────────────
+async function studioGenKeyword() {
+  const keyword=document.getElementById('sk-keyword').value.trim();
+  if(!keyword){toast('Enter a keyword first','error');return;}
+  document.getElementById('sk-loading').style.display='block';
+  document.getElementById('sk-results').innerHTML='';
+  const msgs=['Researching keyword intent…','Writing SEO blog post…','Creating GBP posts…','Writing social captions…'];
+  let mi=0; const iv=setInterval(()=>{const el=document.getElementById('sk-msg');if(el&&mi<msgs.length)el.textContent=msgs[mi++];},3500);
+  try {
+    const blogType=studioGetPill('sk-type-pills');
+    const product=document.getElementById('sk-product').value.trim();
+    const context=document.getElementById('sk-context').value.trim();
+    const audience=studioGetPill('sk-audience-pills');
+    const c=await studioCallClaude(
+      `You are the SEO content expert for ${STUDIO_BRAND}\nOUTPUT: Return ONLY valid JSON:\n{"blog_meta_title":"max 60 chars","blog_meta_description":"max 155 chars","blog_focus_keyword":"string","blog_excerpt":"1-2 sentences","blog_tags":"comma,separated","blog_alt_text":"SEO alt","blog_html":"600-700 word HTML blog MUST rank for target keyword. Include keyword in H1 H2 first paragraph. Include 2 internal links to cchairandbeauty.com","gbp_chapeltown":"max 1500 chars no hashtags","gbp_roundhay":"max 1500 chars no hashtags","gbp_city_centre":"max 1500 chars no hashtags","instagram_caption":"under 150 words no URL ends with question all 3 branches","instagram_hashtags":"20 hashtags","facebook_post":"conversational all 3 branches"}`,
+      `Write SEO content targeting: "${keyword}"\nBlog type: ${blogType}\nAudience: ${audience}\n${product?`Related product: ${product}`:''}\n${context?`Search data: ${context}`:''}`
+    );
+    clearInterval(iv);
+    studioSaveLog({title:keyword,handle:'kw',vendor:'',price:'',image:'',tags:'',productType:'Keyword Blog'}, c, 'keyword');
+    document.getElementById('sk-loading').style.display='none';
+    document.getElementById('sk-results').innerHTML=
+      studioResultSec('📝 Blog Post — "'+keyword+'"',[
+        {label:'① Meta Title',content:c.blog_meta_title,badge:(c.blog_meta_title||'').length+'/60'},
+        {label:'② Meta Description',content:c.blog_meta_description,badge:(c.blog_meta_description||'').length+'/155'},
+        {label:'③ Focus Keyword',content:c.blog_focus_keyword},
+        {label:'④ Blog HTML',content:c.blog_html},
+        {label:'⑤ Excerpt',content:c.blog_excerpt},
+        {label:'⑥ Tags',content:c.blog_tags},
+      ])+
+      studioResultSec('📍 Google Business Profile',[
+        {label:'Chapeltown',content:c.gbp_chapeltown},{label:'Roundhay',content:c.gbp_roundhay},{label:'City Centre',content:c.gbp_city_centre},
+      ])+
+      studioResultSec('📱 Social Media',[
+        {label:'Instagram Caption',content:c.instagram_caption},{label:'Instagram Hashtags',content:c.instagram_hashtags},{label:'Facebook Post',content:c.facebook_post},
+      ]);
+    toast('Keyword blog generated ✓','success');
+  } catch(e) {
+    clearInterval(iv);
+    document.getElementById('sk-loading').style.display='none';
+    toast('Error: '+e.message,'error');
+  }
+}
+
+// ── GENERATE: COLLECTION ─────────────────────────────────────────────────────
+async function studioGenCollection() {
+  const name=document.getElementById('sc-name').value.trim();
+  if(!name){toast('Enter a collection name','error');return;}
+  document.getElementById('sc-loading').style.display='block';
+  document.getElementById('sc-results').innerHTML='';
+  try {
+    const focus=studioGetPill('sc-focus-pills');
+    const c=await studioCallClaude(
+      `You are the SEO content expert for ${STUDIO_BRAND}\nOUTPUT: Return ONLY valid JSON:\n{"collection_meta_title":"max 60 chars","collection_meta_description":"max 155 chars","collection_seo_description":"200-300 word HTML for collection page use h2 p ul tags","collection_excerpt":"1-2 sentences","gbp_chapeltown":"max 1500 chars no hashtags","gbp_roundhay":"max 1500 chars no hashtags","gbp_city_centre":"max 1500 chars no hashtags","instagram_caption":"under 150 words no URL all 3 branches","instagram_hashtags":"20 hashtags","facebook_post":"conversational all 3 branches","email_subject":"max 60 chars","email_preview":"max 90 chars"}`,
+      `Generate content for collection: ${name}\nFocus: ${focus}\nURL: https://cchairandbeauty.com/collections/${name.toLowerCase().replace(/\s+/g,'-')}`
+    );
+    document.getElementById('sc-loading').style.display='none';
+    document.getElementById('sc-results').innerHTML=
+      studioResultSec(`📦 ${name} — SEO Content`,[
+        {label:'Meta Title',content:c.collection_meta_title,badge:(c.collection_meta_title||'').length+'/60'},
+        {label:'Meta Description',content:c.collection_meta_description,badge:(c.collection_meta_description||'').length+'/155'},
+        {label:'Collection Page SEO Description',content:c.collection_seo_description},
+        {label:'Excerpt',content:c.collection_excerpt},
+      ])+
+      studioResultSec('📍 Google Business Profile',[
+        {label:'Chapeltown',content:c.gbp_chapeltown},{label:'Roundhay',content:c.gbp_roundhay},{label:'City Centre',content:c.gbp_city_centre},
+      ])+
+      studioResultSec('📱 Social & Email',[
+        {label:'Instagram Caption',content:c.instagram_caption},{label:'Instagram Hashtags',content:c.instagram_hashtags},{label:'Facebook Post',content:c.facebook_post},{label:'Email Subject',content:c.email_subject},{label:'Email Preview Text',content:c.email_preview},
+      ]);
+    toast('Collection content generated ✓','success');
+  } catch(e) {
+    document.getElementById('sc-loading').style.display='none';
+    toast('Error: '+e.message,'error');
+  }
+}
+
+// ── GENERATE: SOCIAL ─────────────────────────────────────────────────────────
+async function studioGenSocial() {
+  const topic=document.getElementById('so-topic').value.trim();
+  if(!topic){toast('Describe what to post about','error');return;}
+  document.getElementById('so-loading').style.display='block';
+  document.getElementById('so-results').innerHTML='';
+  try {
+    const postType=studioGetPill('so-type-pills');
+    const tone=studioGetPill('so-tone-pills');
+    const c=await studioCallClaude(
+      `You are the social media expert for ${STUDIO_BRAND}\nOUTPUT: Return ONLY valid JSON:\n{"gbp_chapeltown":"max 1500 chars no hashtags","gbp_roundhay":"max 1500 chars no hashtags","gbp_city_centre":"max 1500 chars no hashtags","instagram_caption":"under 150 words no URL ends with question all 3 branches","instagram_hashtags":"20 hashtags","facebook_post":"conversational all 3 branches","whatsapp_broadcast":"informal under 100 words"}`,
+      `Create social posts:\nTopic: ${topic}\nType: ${postType}\nTone: ${tone}`
+    );
+    document.getElementById('so-loading').style.display='none';
+    document.getElementById('so-results').innerHTML=
+      studioResultSec('📍 Google Business Profile',[
+        {label:'Chapeltown',content:c.gbp_chapeltown},{label:'Roundhay',content:c.gbp_roundhay},{label:'City Centre',content:c.gbp_city_centre},
+      ])+
+      studioResultSec('📱 Social & WhatsApp',[
+        {label:'Instagram Caption',content:c.instagram_caption},{label:'Instagram Hashtags (first comment)',content:c.instagram_hashtags},{label:'Facebook Post',content:c.facebook_post},{label:'WhatsApp Broadcast',content:c.whatsapp_broadcast},
+      ]);
+    toast('Social posts generated ✓','success');
+  } catch(e) {
+    document.getElementById('so-loading').style.display='none';
+    toast('Error: '+e.message,'error');
+  }
+}
+
+// ── POST LOG ─────────────────────────────────────────────────────────────────
+function studioGetLog(){try{return JSON.parse(localStorage.getItem('cc_studio_log')||'[]');}catch{return[];}}
+function studioSaveLog(prod, content, mode) {
+  const log=studioGetLog();
+  log.unshift({id:Date.now(),date:new Date().toISOString(),mode,productTitle:prod.title,vendor:prod.vendor||'',productImage:prod.image||'',blogTitle:content.blog_meta_title||content.collection_meta_title||''});
+  if(log.length>200) log.pop();
+  try{localStorage.setItem('cc_studio_log',JSON.stringify(log));}catch(e){}
+}
+function renderStudioLog() {
+  const log=studioGetLog(), c=document.getElementById('studio-log-container');
+  if(!c) return;
+  if(!log.length){c.innerHTML='<div style="text-align:center;padding:32px;color:var(--ink3)">No posts logged yet</div>';return;}
+  const modeIcon={'product':'🛍️','keyword':'🔍','collection':'📦','social':'📱'};
+  c.innerHTML=log.map(e=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
+    ${e.productImage?`<img src="${e.productImage}" style="width:40px;height:40px;border-radius:8px;object-fit:cover;flex-shrink:0">`:`<div style="width:40px;height:40px;border-radius:8px;background:var(--teal-light);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${modeIcon[e.mode]||'✂'}</div>`}
+    <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${e.productTitle}</div><div style="font-size:11px;color:var(--ink3);margin-top:2px">${modeIcon[e.mode]||''} ${e.mode} · ${new Date(e.date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</div>${e.blogTitle?`<div style="font-size:11px;color:var(--ink2);margin-top:1px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${e.blogTitle}</div>`:''}</div>
+    <span style="font-size:10px;font-weight:700;background:var(--teal-light);color:var(--teal);border-radius:20px;padding:2px 8px;flex-shrink:0">${e.mode}</span>
+  </div>`).join('');
+}
+function studioExportLog(){
+  const log=studioGetLog();
+  const rows=[['Date','Mode','Product','Blog Title'].join('\t'),...log.map(e=>[new Date(e.date).toLocaleDateString('en-GB'),e.mode,e.productTitle,e.blogTitle].join('\t'))].join('\n');
+  const blob=new Blob([rows],{type:'text/tab-separated-values'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=`cc-studio-log-${new Date().toISOString().substring(0,10)}.tsv`;a.click();URL.revokeObjectURL(url);
+  toast('Exported ✓','success');
+}
+function studioClearLog(){if(!confirm('Clear all studio log entries?'))return;localStorage.removeItem('cc_studio_log');renderStudioLog();toast('Cleared');}
+
+// Auto-load products when studio tab opened
+const _origShowTab = showTab;
+window.showTab = function(id, btn) {
+  _origShowTab(id, btn);
+  if(id==='studio' && studioProds.length===0) studioLoadProducts();
+};
+
+// Handle ?kw= URL parameter — auto-open studio keyword tab
+const _kwParam = new URLSearchParams(window.location.search).get('kw');
+if(_kwParam) {
+  setTimeout(()=>{
+    const tab=document.getElementById('tab-studio');
+    if(tab){showTab('studio',tab);studioMode('keyword',document.getElementById('sm-keyword'));document.getElementById('sk-keyword').value=decodeURIComponent(_kwParam);}
+  }, 1500);
+}
 </script>
 
 
