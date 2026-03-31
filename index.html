@@ -1611,8 +1611,63 @@ function renderHistory(){
 
 // ── UTILITY ───────────────────────────────────────────────────────────────────
 function openStudio(keyword){
-  window.open('https://project-z63rh.vercel.app','_blank');
-  toast('Opening Content Studio — search for: '+keyword,'success');
+  // Switch to Content Studio tab
+  const tab = document.getElementById('tab-studio');
+  if(tab) showTab('studio', tab);
+
+  // Switch to keyword blog sub-mode
+  setTimeout(()=>{
+    const smKw = document.getElementById('sm-keyword');
+    if(smKw) studioMode('keyword', smKw);
+
+    // Pre-fill the keyword
+    const kwInput = document.getElementById('sk-keyword');
+    if(kwInput){
+      kwInput.value = keyword;
+      kwInput.focus();
+      kwInput.style.borderColor = 'var(--teal)';
+      kwInput.scrollIntoView({behavior:'smooth', block:'center'});
+    }
+
+    // Try to detect if it looks like a product vs keyword and auto-set audience
+    const kl = keyword.toLowerCase();
+    if(kl.includes('men') || kl.includes('durag') || kl.includes('beard') || kl.includes('wave') || kl.includes('barber')){
+      const menBtn = document.querySelector('#sk-audience-pills .studio-pill[data-val="men"]');
+      if(menBtn) studioSetPill(menBtn, 'sk-audience-pills');
+    } else if(kl.includes('kid') || kl.includes('child') || kl.includes('baby')){
+      const kidBtn = document.querySelector('#sk-audience-pills .studio-pill[data-val="kids"]');
+      if(kidBtn) studioSetPill(kidBtn, 'sk-audience-pills');
+    }
+
+    // Auto-set blog type based on keyword
+    if(kl.includes('best') || kl.includes('top') || kl.includes('review')){
+      const revBtn = document.querySelector('#sk-type-pills .studio-pill[data-val="product-review"]');
+      if(revBtn) studioSetPill(revBtn, 'sk-type-pills');
+    } else if(kl.includes('how to') || kl.includes('how-to')){
+      const howBtn = document.querySelector('#sk-type-pills .studio-pill[data-val="how-to"]');
+      if(howBtn) studioSetPill(howBtn, 'sk-type-pills');
+    } else if(kl.includes('buy') || kl.includes('guide') || kl.includes('choose')){
+      const buyBtn = document.querySelector('#sk-type-pills .studio-pill[data-val="buying-guide"]');
+      if(buyBtn) studioSetPill(buyBtn, 'sk-type-pills');
+    }
+
+    // Try to pull Search Console context for this keyword from live data
+    const sc = liveData.sc;
+    if(sc){
+      const match = [...(sc.lowCTR||[]), ...(sc.nearPage1||[])].find(r=>(r.query||r.q||'').toLowerCase()===keyword.toLowerCase());
+      if(match){
+        const ctxEl = document.getElementById('sk-context');
+        if(ctxEl){
+          const impr = match.impressions||match.impr||0;
+          const ctr = (match.ctr||0).toFixed(2);
+          const pos = (match.position||match.pos||0).toFixed(1);
+          ctxEl.value = `${(impr).toLocaleString()} impressions, position ${pos}, ${ctr}% CTR`;
+        }
+      }
+    }
+
+    toast('✓ Keyword pre-filled — click Generate SEO Blog', 'success');
+  }, 150);
 }
 
 function downloadReport(){
@@ -1813,7 +1868,7 @@ function renderCalendar(d){
           <div style="font-size:11px;color:var(--ink3);margin-bottom:6px">Keyword: <strong>${w.blog?.keyword||''}</strong></div>
           <div style="font-size:11px;color:var(--ink2);margin-bottom:8px">${w.blog?.why||''}</div>
           ${w.blog?.outline?`<div style="font-size:11px;color:var(--ink2)">${w.blog.outline.map(o=>`<div style="padding:2px 0;border-bottom:0.5px solid var(--border)">• ${o}</div>`).join('')}</div>`:''}
-          <button onclick="openStudio('${(w.blog?.keyword||'').replace(/'/g,"\'")}');toast('Opening Content Studio for: ${(w.blog?.keyword||'').replace(/'/g,"\'")}','success')" style="margin-top:10px;background:var(--teal-light);color:var(--teal);border:1px solid var(--teal);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Write in Content Studio →</button>
+          <button onclick="openStudio('${(w.blog?.keyword||'').replace(/'/g,"\\'")}');" style="margin-top:10px;background:var(--teal-light);color:var(--teal);border:1px solid var(--teal);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Write in Content Studio →</button>
         </div>
 
         <!-- ADS FOCUS -->
