@@ -954,6 +954,11 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
       <label class="form-lbl">Google Ads Customer ID</label>
       <input class="form-inp" type="text" id="s-ads-id" placeholder="1234567890 (no dashes)">
     </div>
+    <div class="form-grp">
+      <label class="form-lbl">OpenAI API Key (AI Images)</label>
+      <input class="form-inp" type="password" id="s-openai" placeholder="sk-...">
+      <div class="form-hint">Used to generate styled AI product images for blogs and social media. ~4p per image. Add OPENAI_API_KEY to Vercel env vars too.</div>
+    </div>
     <div class="modal-btns">
       <button class="btn-ghost-dk" onclick="closeSettings()">Cancel</button>
       <button onclick="saveSettings()" style="flex:1;background:var(--teal);color:#fff;border:none;border-radius:var(--r);padding:11px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">Save Settings</button>
@@ -986,6 +991,7 @@ function cfg(){return{
   site:localStorage.getItem('cc_site')||'cchairandbeauty.com',
   ga4:localStorage.getItem('cc_ga4')||'403507004',
   adsId:localStorage.getItem('cc_ads_id')||'7490010943',
+  openaiKey:localStorage.getItem('cc_openai_key')||'',
 };}
 function openSettings(){
   const s=cfg();
@@ -996,6 +1002,7 @@ function openSettings(){
   document.getElementById('s-site').value=s.site||'';
   document.getElementById('s-ga4').value=s.ga4||'';
   document.getElementById('s-ads-id').value=s.adsId||'';
+  document.getElementById('s-openai').value=localStorage.getItem('cc_openai_key')||'';
   document.getElementById('settings-modal').classList.add('open');
 }
 function closeSettings(){document.getElementById('settings-modal').classList.remove('open');}
@@ -1007,6 +1014,7 @@ function saveSettings(){
   localStorage.setItem('cc_site',document.getElementById('s-site').value.trim());
   localStorage.setItem('cc_ga4',document.getElementById('s-ga4').value.trim());
   localStorage.setItem('cc_ads_id',document.getElementById('s-ads-id').value.trim());
+  localStorage.setItem('cc_openai_key',document.getElementById('s-openai').value.trim());
   closeSettings();toast('Settings saved ✓','success');
 }
 
@@ -1376,12 +1384,15 @@ function renderShopify(){
     {val:fmtNum(sh.weekOrders||0),lbl:'Orders This Week',sub:'',cls:''},
   ].map(m=>`<div class="metric"><div class="metric-val ${m.cls}">${m.val}</div><div class="metric-lbl">${m.lbl}</div><div class="metric-sub">${m.sub}</div></div>`).join('');
 
-  document.getElementById('top-products').innerHTML=(sh.topProducts||[]).map(p=>`<tr>
+  const topProdsEl = document.getElementById('top-products');
+  if(topProdsEl) {
+    topProdsEl.innerHTML=(sh.topProducts||[]).map(p=>`<tr>
     <td class="kw">${p.title||'Unknown'}</td>
     <td class="good">${p.quantity||0}</td>
     <td>${fmtGbp(p.revenue||0)}</td>
     <td><button class="quick-btn" onclick="openStudio('${(p.title||'').replace(/'/g,"\\'")}')">Write Blog →</button></td>
   </tr>`).join('');
+  }
 
   document.getElementById('recent-orders').innerHTML=(sh.recentOrders||[]).slice(0,15).map(o=>`<tr>
     <td class="kw">#${o.number||''}</td>
@@ -1871,22 +1882,34 @@ function renderComparison(d){
 
 // ── COMPETITORS ────────────────────────────────────────────────────────────────
 async function loadCompetitors(){
-  const key=process?.env?.GOOGLE_PLACES_API_KEY;
-  document.getElementById('comp-loading').style.display='none';
-  document.getElementById('comp-content').style.display='block';
-  
+  // Cache: only re-fetch if older than 24 hours
+  const cacheKey = 'cc_competitors_cache';
+  const cacheTimeKey = 'cc_competitors_time';
+  const cached = localStorage.getItem(cacheKey);
+  const cachedAt = parseInt(localStorage.getItem(cacheTimeKey)||'0');
+  if(cached && (Date.now()-cachedAt) < 24*60*60*1000) {
+    try { renderCompetitors(JSON.parse(cached)); return; } catch(e){}
+  }
+
+  document.getElementById('comp-loading').style.display='block';
+  document.getElementById('comp-loading').innerHTML='<div class="spin" style="margin:0 auto 12px"></div><p>Loading competitor data...</p>';
+  document.getElementById('comp-content').style.display='none';
+
   try{
     const r=await fetch('/api/competitors');
     const d=await r.json();
     if(d.error&&d.error.includes('not set')){
-      document.getElementById('comp-loading').style.display='block';
-      document.getElementById('comp-loading').innerHTML='<div style="text-align:center;padding:32px"><div style="font-size:32px;margin-bottom:10px">🗺️</div><div style="font-size:14px;font-weight:600;margin-bottom:6px">Add Google Places API key to enable live competitor tracking</div><div style="font-size:12px;color:var(--ink3)">Go to Vercel → Settings → Environment Variables → Add GOOGLE_PLACES_API_KEY<br>Costs approximately £0.78/month</div></div>';
-      document.getElementById('comp-content').style.display='none';
+      document.getElementById('comp-loading').innerHTML='<div style="text-align:center;padding:32px"><div style="font-size:32px;margin-bottom:10px">🗺️</div><div style="font-size:14px;font-weight:600;margin-bottom:6px">Add Google Places API key to enable live competitor tracking</div><div style="font-size:12px;color:var(--ink3);line-height:1.6">Go to <strong>vercel.com → cc-intelligence → Settings → Environment Variables</strong><br>Add: <code style="background:var(--card2);padding:2px 6px;border-radius:4px">GOOGLE_PLACES_API_KEY</code> = your AIza… key<br><br>Costs approximately £0.78/month. Redeploys automatically.</div></div>';
       return;
     }
+    if(d.error) throw new Error(d.error);
+    // Cache for 24 hours
+    try{ localStorage.setItem(cacheKey, JSON.stringify(d)); localStorage.setItem(cacheTimeKey, Date.now().toString()); }catch(e){}
+    document.getElementById('comp-loading').style.display='none';
+    document.getElementById('comp-content').style.display='block';
     renderCompetitors(d);
   }catch(e){
-    document.getElementById('comp-loading').innerHTML='<div style="color:var(--ink3);text-align:center;padding:20px">Error loading competitor data: '+e.message+'</div>';
+    document.getElementById('comp-loading').innerHTML='<div style="color:var(--ink3);text-align:center;padding:20px;font-size:13px">Error loading competitor data: '+e.message+'</div>';
   }
 }
 
@@ -2068,14 +2091,51 @@ function studioLiveContext() {
   const compare = liveData.compare;
   const lines = [];
 
+  // Build product catalogue with URLs for internal linking
+  const productCatalogue = [];
+  if(sh?.topProducts?.length) {
+    sh.topProducts.forEach(p => {
+      if(p.handle) productCatalogue.push({ title: p.title, handle: p.handle, qty: p.quantity||0 });
+    });
+  }
+  if(compare?.comparison?.length) {
+    compare.comparison.forEach(p => {
+      if(p.handle && !productCatalogue.find(x=>x.handle===p.handle)) {
+        productCatalogue.push({ title: p.title, handle: p.handle, qty: p.quantity||0 });
+      }
+    });
+  }
+  // Also include cached products for broader matching
+  try {
+    const cached = JSON.parse(localStorage.getItem('cc_prods_v2')||localStorage.getItem('cc_products')||'[]');
+    cached.slice(0,50).forEach(p => {
+      if(p.handle && !productCatalogue.find(x=>x.handle===p.handle)) {
+        productCatalogue.push({ title: p.title, handle: p.handle, qty: 0 });
+      }
+    });
+  } catch(e){}
+
   if(sh) {
     lines.push(`\nLIVE BUSINESS DATA (use this to make content specific and timely):`);
     lines.push(`- This week's revenue: £${(sh.weekRevenue||0).toFixed(2)} (${sh.weekOrders||0} orders)`);
     lines.push(`- Today's revenue: £${(sh.todayRevenue||0).toFixed(2)} (${sh.todayOrders||0} orders)`);
     if(sh.topProducts?.length) {
-      lines.push(`- TOP SELLING PRODUCTS THIS WEEK (reference these in content when relevant):`);
-      sh.topProducts.slice(0,8).forEach(p=>lines.push(`  · ${p.title} — ${p.quantity} sold (£${(p.revenue||0).toFixed(2)})`));
+      lines.push(`- TOP SELLING PRODUCTS THIS WEEK — USE THESE AS INTERNAL LINKS in the blog HTML where relevant:`);
+      sh.topProducts.slice(0,10).forEach(p=>{
+        const url = p.handle ? `https://cchairandbeauty.com/products/${p.handle}` : 'https://cchairandbeauty.com';
+        lines.push(`  · ${p.title} — ${p.quantity} sold — URL: ${url}`);
+      });
     }
+  }
+
+  if(productCatalogue.length > 0) {
+    lines.push(`\nPRODUCT CATALOGUE WITH URLs (use for internal links in blog HTML — link the product name as anchor text to the product URL):`);
+    lines.push(`Format: <a href="URL">Product Name</a>`);
+    productCatalogue.slice(0,30).forEach(p => {
+      lines.push(`  · ${p.title} → https://cchairandbeauty.com/products/${p.handle}`);
+    });
+    lines.push(`  · Browse all products → https://cchairandbeauty.com/collections/all`);
+    lines.push(`  · Shop by brand → https://cchairandbeauty.com/collections/brands`);
   }
 
   if(compare?.comparison?.length) {
@@ -2258,7 +2318,7 @@ async function studioGenProduct() {
   try {
     const p=studioSelProd;
     const c=await studioCallClaude(
-      `You are the content generator for ${STUDIO_BRAND}\nOUTPUT: Return ONLY valid JSON:\n{"blog_meta_title":"max 60 chars","blog_meta_description":"max 155 chars","blog_focus_keyword":"string","blog_excerpt":"1-2 sentences","blog_tags":"comma,separated","blog_alt_text":"SEO alt","blog_html":"600-700 word HTML blog","gbp_chapeltown":"max 1500 chars no hashtags","gbp_roundhay":"max 1500 chars no hashtags","gbp_city_centre":"max 1500 chars no hashtags","instagram_caption":"under 150 words no URL ends with question all 3 branches","instagram_hashtags":"20 hashtags #cchairandbeauty first","facebook_post":"conversational all 3 branches","review_request_whatsapp":"warm 2-3 sentence WhatsApp","review_request_instore":"verbal till script","menu_tags":["array"]}`,
+      `You are the content generator for ${STUDIO_BRAND}\nOUTPUT: Return ONLY valid JSON:\n{"blog_meta_title":"max 60 chars","blog_meta_description":"max 155 chars","blog_focus_keyword":"string","blog_excerpt":"1-2 sentences","blog_tags":"comma,separated","blog_alt_text":"SEO alt","blog_html":"600-700 word HTML blog. RULES: (1) The main product MUST be linked using <a href=\\"https://cchairandbeauty.com/products/HANDLE\\">Product Name</a> at least twice. (2) Include 2-3 additional internal links to related products from the PRODUCT CATALOGUE provided — link by product name to product URL. (3) Link to 1 relevant collection page. (4) Include a CTA paragraph near end mentioning all 3 Leeds branches and cchairandbeauty.com. (5) Use h2 h3 p strong ul li tags properly.","gbp_chapeltown":"max 1500 chars no hashtags","gbp_roundhay":"max 1500 chars no hashtags","gbp_city_centre":"max 1500 chars no hashtags","instagram_caption":"under 150 words no URL ends with question all 3 branches","instagram_hashtags":"20 hashtags #cchairandbeauty first","facebook_post":"conversational all 3 branches","review_request_whatsapp":"warm 2-3 sentence WhatsApp","review_request_instore":"verbal till script","menu_tags":["array"]}`,
       `Generate all content for:\nProduct: ${p.title}\nPrice: ${p.price}\nBrand: ${p.vendor}\nType: ${p.productType}\nTags: ${p.tags}\nDescription: ${p.description}\nURL: https://cchairandbeauty.com/products/${p.handle}`
     );
     clearInterval(iv);
@@ -2266,7 +2326,30 @@ async function studioGenProduct() {
     document.getElementById('studio-prod-loading').style.display='none';
     document.getElementById('studio-sel-bar').style.display='flex';
     document.getElementById('studio-prod-btn').style.display='flex';
+
+    // Image section placeholder — AI generates in background
+    const imgSectionId = 'studio-img-'+Date.now();
+    const hasOpenAI = cfg().openaiKey;
+    const imgSection = `<div class="studio-result-sec" id="${imgSectionId}">
+      <div class="studio-result-hdr"><h4>🖼 AI Product Images</h4><span style="font-size:11px;color:rgba(255,255,255,.7)">${hasOpenAI?'Generating in background…':'Add OpenAI key in ⚙ Settings'}</span></div>
+      <div style="padding:14px 16px">
+        <div id="${imgSectionId}-body" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+          ${hasOpenAI
+            ? ['📦 Blog Header (1200×628)','📸 Instagram (1080×1080)','💬 Facebook (1200×630)'].map((lbl,i)=>`
+              <div style="text-align:center">
+                <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ink3);margin-bottom:6px">${lbl}</div>
+                <div id="${imgSectionId}-${i}" style="background:var(--card2);border-radius:var(--r);aspect-ratio:${i===0?'1200/628':'1'};display:flex;align-items:center;justify-content:center;border:1px solid var(--border2)">
+                  <div class="spin" style="width:24px;height:24px;border-width:2px"></div>
+                </div>
+              </div>`).join('')
+            : `<div style="grid-column:1/-1;font-size:13px;color:var(--ink3);padding:8px 0">Add your OpenAI API key in ⚙ Settings to enable AI product image generation (~4p per image).</div>`
+          }
+        </div>
+      </div>
+    </div>`;
+
     document.getElementById('studio-prod-results').innerHTML=
+      imgSection+
       studioResultSec('📝 Blog Post',[
         {label:'① Meta Title',content:c.blog_meta_title,badge:(c.blog_meta_title||'').length+'/60'},
         {label:'② Meta Description',content:c.blog_meta_description,badge:(c.blog_meta_description||'').length+'/155'},
@@ -2291,7 +2374,13 @@ async function studioGenProduct() {
         {label:'In-Store Verbal Script',content:c.review_request_instore},
       ])+
       (c.menu_tags?.length?`<div style="background:var(--card);border-radius:var(--r2);padding:12px 14px;box-shadow:var(--shadow);margin-bottom:12px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ink3);margin-bottom:8px">Shopify Tags</div><div style="display:flex;flex-wrap:wrap;gap:5px">${(Array.isArray(c.menu_tags)?c.menu_tags:String(c.menu_tags).split(',')).map(t=>`<span style="font-size:12px;background:var(--teal-light);border:1px solid var(--teal);color:var(--teal);border-radius:20px;padding:3px 12px;font-weight:600">${t.trim()}</span>`).join('')}</div></div>`:'');
+
     toast('Content generated ✓','success');
+
+    // Generate AI images in background if OpenAI key exists and product has image
+    if(hasOpenAI && p.image) {
+      generateStudioImages(p, c, imgSectionId);
+    }
   } catch(e) {
     clearInterval(iv);
     document.getElementById('studio-prod-loading').style.display='none';
@@ -2315,7 +2404,7 @@ async function studioGenKeyword() {
     const context=document.getElementById('sk-context').value.trim();
     const audience=studioGetPill('sk-audience-pills');
     const c=await studioCallClaude(
-      `You are the SEO content expert for ${STUDIO_BRAND}\nOUTPUT: Return ONLY valid JSON:\n{"blog_meta_title":"max 60 chars","blog_meta_description":"max 155 chars","blog_focus_keyword":"string","blog_excerpt":"1-2 sentences","blog_tags":"comma,separated","blog_alt_text":"SEO alt","blog_html":"600-700 word HTML blog MUST rank for target keyword. Include keyword in H1 H2 first paragraph. Include 2 internal links to cchairandbeauty.com","gbp_chapeltown":"max 1500 chars no hashtags","gbp_roundhay":"max 1500 chars no hashtags","gbp_city_centre":"max 1500 chars no hashtags","instagram_caption":"under 150 words no URL ends with question all 3 branches","instagram_hashtags":"20 hashtags","facebook_post":"conversational all 3 branches"}`,
+      `You are the SEO content expert for ${STUDIO_BRAND}\nOUTPUT: Return ONLY valid JSON:\n{"blog_meta_title":"max 60 chars","blog_meta_description":"max 155 chars","blog_focus_keyword":"string","blog_excerpt":"1-2 sentences","blog_tags":"comma,separated","blog_alt_text":"SEO alt","blog_html":"600-700 word HTML blog. RULES: (1) MUST rank for the target keyword — use it in H1, first H2, first paragraph, and 3-4 times naturally. (2) MUST include 3-5 internal links using <a href=\\"URL\\">anchor text</a> — link directly to relevant products from the PRODUCT CATALOGUE provided, using the product name as anchor text. If a keyword matches a product we stock, that product MUST be linked. Also link to a relevant collection page. (3) Include a clear CTA paragraph near the end mentioning all 3 Leeds branches and cchairandbeauty.com. (4) Use h2, h3, p, strong, ul, li tags properly.","gbp_chapeltown":"max 1500 chars no hashtags","gbp_roundhay":"max 1500 chars no hashtags","gbp_city_centre":"max 1500 chars no hashtags","instagram_caption":"under 150 words no URL ends with question all 3 branches","instagram_hashtags":"20 hashtags","facebook_post":"conversational all 3 branches"}`,
       `Write SEO content targeting: "${keyword}"\nBlog type: ${blogType}\nAudience: ${audience}\n${product?`Related product: ${product}`:''}\n${context?`Search data: ${context}`:''}`
     );
     clearInterval(iv);
@@ -2424,6 +2513,81 @@ function renderStudioLog() {
     <span style="font-size:10px;font-weight:700;background:var(--teal-light);color:var(--teal);border-radius:20px;padding:2px 8px;flex-shrink:0">${e.mode}</span>
   </div>`).join('');
 }
+// ── AI IMAGE GENERATION ───────────────────────────────────────────────────────
+const STUDIO_IMAGE_SIZES = [
+  { id: 0, label: 'Blog Header',   w: 1200, h: 628,  ratio: '1200/628', setting: 'salon' },
+  { id: 1, label: 'Instagram',     w: 1080, h: 1080, ratio: '1',        setting: 'studio' },
+  { id: 2, label: 'Facebook',      w: 1200, h: 630,  ratio: '1200/630', setting: 'natural' },
+];
+
+const SETTING_PROMPTS_STUDIO = {
+  studio:   'Clean white studio surface, soft grey gradient background, professional product photography lighting from above, shadow underneath.',
+  salon:    'Professional beauty salon counter, clean aesthetic, styling tools softly visible in background, warm studio lighting.',
+  bathroom: 'Clean marble bathroom shelf, soft warm lighting, white towels slightly out of focus in background.',
+  barber:   'Barbershop counter, dark wood surface, chrome accents, mirror reflection softly visible.',
+  bedroom:  'Bedroom vanity dressing table, warm soft lighting, round mirror partially visible.',
+  natural:  'Wooden surface surrounded by natural botanicals — eucalyptus leaves, dried flowers, soft window light.',
+};
+
+function autoPickSettingStudio(p) {
+  const t = ((p.tags||'')+(p.productType||'')+(p.title||'')).toLowerCase();
+  if(t.includes('clipper')||t.includes('wave')||t.includes('beard')||t.includes('for-men')) return 'barber';
+  if(t.includes('shampoo')||t.includes('conditioner')||t.includes('soap')) return 'bathroom';
+  if(t.includes('wig')||t.includes('makeup')||t.includes('eyelash')||t.includes('serum')) return 'bedroom';
+  if(t.includes('relaxer')||t.includes('dye')||t.includes('treatment')) return 'salon';
+  if(t.includes('oil')||t.includes('natural')||t.includes('shea')||t.includes('castor')) return 'natural';
+  return 'studio';
+}
+
+async function generateStudioImages(product, content, sectionId) {
+  const s = cfg();
+  if(!s.openaiKey || !product.image) return;
+
+  const setting = autoPickSettingStudio(product);
+  const settingPrompt = SETTING_PROMPTS_STUDIO[setting] || SETTING_PROMPTS_STUDIO.studio;
+  const seoBase = (product.title||'').toLowerCase().replace(/[^a-z0-9\s]/g,'').replace(/\s+/g,'-').substring(0,50);
+
+  for(const size of STUDIO_IMAGE_SIZES) {
+    const slotEl = document.getElementById(`${sectionId}-${size.id}`);
+    if(!slotEl) continue;
+    try {
+      const r = await fetch('/api/generate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productImageUrl: product.image,
+          productName: product.title,
+          productType: product.productType||'hair product',
+          setting,
+          width: size.w,
+          height: size.h,
+          apiKey: s.openaiKey,
+        })
+      });
+      const d = await r.json();
+      if(d.error) throw new Error(d.error);
+      const b64 = d.image_b64;
+      if(!b64) throw new Error('No image returned');
+      const filename = `${seoBase}-${size.label.toLowerCase().replace(/\s+/g,'-')}-cc-hair-beauty.png`;
+      slotEl.innerHTML = `
+        <img src="data:image/png;base64,${b64}" style="width:100%;border-radius:var(--r);display:block;cursor:pointer;margin-bottom:6px" onclick="window.open(this.src,'_blank')" title="Click to open full size">
+        <button onclick="studioDownloadImg('${b64}','${filename}')" style="width:100%;background:var(--teal);color:#fff;border:none;border-radius:6px;padding:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">⬇ Download ${size.w}×${size.h}</button>
+        <div style="font-size:10px;color:var(--ink3);margin-top:3px;text-align:center">~4p · ${setting}</div>`;
+    } catch(e) {
+      if(slotEl) slotEl.innerHTML = `<div style="background:var(--red-bg);border-radius:var(--r);padding:10px;font-size:11px;color:var(--red);text-align:center">Failed: ${e.message}<br><button onclick="generateStudioImages(studioSelProd,null,'${sectionId}')" style="margin-top:5px;background:var(--teal);color:#fff;border:none;border-radius:5px;padding:4px 10px;font-size:10px;cursor:pointer;font-family:inherit">Retry</button></div>`;
+    }
+  }
+  toast('AI images ready ✓','success');
+}
+
+function studioDownloadImg(b64, filename) {
+  const a = document.createElement('a');
+  a.href = 'data:image/png;base64,'+b64;
+  a.download = filename;
+  a.click();
+  toast('Downloaded: '+filename,'success');
+}
+
 function studioExportLog(){
   const log=studioGetLog();
   const rows=[['Date','Mode','Product','Blog Title'].join('\t'),...log.map(e=>[new Date(e.date).toLocaleDateString('en-GB'),e.mode,e.productTitle,e.blogTitle].join('\t'))].join('\n');
