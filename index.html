@@ -501,7 +501,7 @@ function cfg(){return{
   budget:localStorage.getItem('cc_budget')||'3500',
   site:localStorage.getItem('cc_site')||'https://www.cchairandbeauty.com',
   ga4:localStorage.getItem('cc_ga4')||'403507004',
-  adsId:localStorage.getItem('cc_ads_id')||'3934493272',
+  adsId:localStorage.getItem('cc_ads_id')||'7490010943',
 };}
 function openSettings(){
   const s=cfg();
@@ -1233,8 +1233,7 @@ function dbgRender(){
   const el = document.getElementById('dbg-log');
   if(!el) return;
   el.innerHTML = dbgLines.length
-    ? dbgLines.map(l=>`<span class="dbg-dim">[${l.ts}]</span> <span class="dbg-${l.cls}">${l.msg}</span>`).join('
-')
+    ? dbgLines.map(l=>`<span class="dbg-dim">[${l.ts}]</span> <span class="dbg-${l.cls}">${l.msg}</span>`).join('\n')
     : '<span class="dbg-dim">No logs yet — click Run All or test individually</span>';
   el.scrollTop = 0; // newest at top
 }
@@ -1250,8 +1249,7 @@ function dbgClear(){
 }
 
 function dbgCopy(){
-  const text = dbgLines.map(l=>'['+l.ts+'] '+l.msg).join('
-');
+  const text = dbgLines.map(l=>'['+l.ts+'] '+l.msg).join('\n');
   navigator.clipboard.writeText(text||'No logs').then(()=>{
     const btn = event.target;
     const orig = btn.textContent;
