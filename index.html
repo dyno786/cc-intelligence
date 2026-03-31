@@ -208,6 +208,10 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
 .studio-result-sec{background:var(--card);border-radius:var(--r2);box-shadow:var(--shadow);overflow:hidden;margin-bottom:12px}
 .studio-result-hdr{background:linear-gradient(135deg,var(--teal),var(--teal2));padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
 .studio-result-hdr h4{color:#fff;font-size:13px;font-weight:700}
+.badge-teal{background:var(--teal-light);color:var(--teal)}
+.badge-yellow{background:var(--yellow-bg);color:var(--yellow2)}
+.badge-red{background:var(--red-bg);color:var(--red)}
+.metric-val.amber{color:var(--yellow2)}
 .studio-result-body{padding:14px 16px}
 
 /* SETTINGS */
@@ -257,7 +261,6 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
     </div>
   </div>
   <div class="hdr-r">
-    <a href="https://project-z63rh.vercel.app" class="btn-ghost" target="_blank">✂ Content Studio</a>
     <button class="btn-ghost" id="refreshBtn" onclick="refreshAll()" style="display:none">↻ Refresh</button>
     <button class="btn-ghost" id="themeBtn" onclick="toggleTheme()">🌙 Dark</button>
     <button class="btn-ghost" onclick="openSettings()">⚙ Settings</button>
@@ -311,6 +314,8 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
     <button class="tab-btn" id="tab-calendar" onclick="showTab('calendar',this)"><span>📅 Content</span></button>
     <button class="tab-btn" id="tab-history" onclick="showTab('history',this)"><span>📊 History</span></button>
     <button class="tab-btn" id="tab-studio" onclick="showTab('studio',this)"><span>✂ Content Studio</span></button>
+    <button class="tab-btn" id="tab-seo" onclick="showTab('seo',this);loadSeoAudit()"><span>🔎 SEO Audit</span></button>
+    <button class="tab-btn" id="tab-stock" onclick="showTab('stock',this)"><span>📦 Stock Intel</span></button>
   </div>
 
   <!-- OVERVIEW TAB -->
@@ -785,6 +790,125 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
     </div>
 
   </div><!-- /screen-studio -->
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- SEO AUDIT TAB -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div class="screen" id="screen-seo">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+      <div>
+        <div class="sec-title" style="margin:0">🔎 Shopify SEO Audit <span class="badge badge-teal" id="seo-count"></span></div>
+        <p style="font-size:12px;color:var(--ink3);margin-top:4px">Products missing meta title, meta description or with duplicate SEO. Fix these for instant organic traffic gains.</p>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="copy-btn-dk" onclick="loadSeoAudit()">↻ Refresh Audit</button>
+        <button class="copy-btn-dk" onclick="exportSeoAudit()">⬇ Export CSV</button>
+      </div>
+    </div>
+
+    <!-- Score banner -->
+    <div id="seo-score-banner" style="display:none;background:var(--card);border-radius:var(--r2);box-shadow:var(--shadow);padding:16px 20px;margin-bottom:14px">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+        <div style="text-align:center">
+          <div style="font-size:28px;font-weight:700;color:var(--teal)" id="seo-s-total">—</div>
+          <div style="font-size:11px;color:var(--ink3);text-transform:uppercase;font-weight:600;margin-top:3px">Products Scanned</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:28px;font-weight:700;color:var(--red)" id="seo-s-missing">—</div>
+          <div style="font-size:11px;color:var(--ink3);text-transform:uppercase;font-weight:600;margin-top:3px">Missing Meta Title</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:28px;font-weight:700;color:var(--yellow2)" id="seo-s-short">—</div>
+          <div style="font-size:11px;color:var(--ink3);text-transform:uppercase;font-weight:600;margin-top:3px">Too Short / Long</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:28px;font-weight:700;color:var(--teal)" id="seo-s-good">—</div>
+          <div style="font-size:11px;color:var(--ink3);text-transform:uppercase;font-weight:600;margin-top:3px">Fully Optimised</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter pills -->
+    <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px" id="seo-filter-pills">
+      <button class="studio-pill active" data-val="all" onclick="seoFilter(this,'all')">All Issues</button>
+      <button class="studio-pill" data-val="no-meta" onclick="seoFilter(this,'no-meta')">🔴 No Meta Title</button>
+      <button class="studio-pill" data-val="no-desc" onclick="seoFilter(this,'no-desc')">🟡 No Meta Desc</button>
+      <button class="studio-pill" data-val="short-title" onclick="seoFilter(this,'short-title')">📏 Title Too Short</button>
+      <button class="studio-pill" data-val="no-alt" onclick="seoFilter(this,'no-alt')">🖼 No Image Alt</button>
+      <button class="studio-pill" data-val="ok" onclick="seoFilter(this,'ok')">✅ Already Good</button>
+    </div>
+
+    <div id="seo-loading" class="loading-state"><div class="spin"></div><p>Scanning your Shopify products for SEO issues…</p></div>
+    <div id="seo-empty" class="empty" style="display:none"><div class="icon">🔎</div><h3>No issues found</h3><p>Add your Shopify token in Settings to run the audit.</p></div>
+    <div class="tbl-wrap" id="seo-tbl-wrap" style="display:none">
+      <table class="tbl">
+        <thead><tr><th>Product</th><th>Meta Title</th><th>Meta Desc</th><th>Alt Text</th><th>Issue</th><th>Action</th></tr></thead>
+        <tbody id="seo-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- STOCK INTELLIGENCE TAB -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div class="screen" id="screen-stock">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+      <div>
+        <div class="sec-title" style="margin:0">📦 Stock Intelligence <span class="badge badge-teal" id="stock-badge"></span></div>
+        <p style="font-size:12px;color:var(--ink3);margin-top:4px">Cross-reference your Shopify sales velocity with stock levels. Upload your ITvRetail stock export to see reorder alerts.</p>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="copy-btn-dk" onclick="document.getElementById('stock-file-inp').click()">⬆ Upload Stock CSV</button>
+        <input type="file" id="stock-file-inp" accept=".csv,.xlsx" style="display:none" onchange="loadStockFile(this.files[0])">
+        <button class="copy-btn-dk" onclick="exportStockReport()">⬇ Export Reorder List</button>
+      </div>
+    </div>
+
+    <!-- Upload prompt -->
+    <div id="stock-upload-prompt" style="background:var(--card);border:2px dashed var(--border2);border-radius:var(--r2);padding:32px;text-align:center;margin-bottom:14px;cursor:pointer" onclick="document.getElementById('stock-file-inp').click()" ondragover="event.preventDefault();this.style.borderColor='var(--teal)'" ondragleave="this.style.borderColor='var(--border2)'" ondrop="handleStockDrop(event)">
+      <div style="font-size:32px;margin-bottom:10px">📊</div>
+      <div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:4px">Drop your ITvRetail stock export here</div>
+      <div style="font-size:13px;color:var(--ink3);margin-bottom:8px">Export from ITvRetail → Stock → Export to CSV · or any spreadsheet with Product Name + Quantity columns</div>
+      <div style="font-size:11px;color:var(--ink3)">Needs columns: product name + stock quantity (level/on hand)</div>
+    </div>
+
+    <!-- Summary cards -->
+    <div id="stock-summary" style="display:none;margin-bottom:14px">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">
+        <div class="metric"><div class="metric-val red" id="st-critical">—</div><div class="metric-lbl">Critical (≤2)</div><div class="metric-sub">Order immediately</div></div>
+        <div class="metric"><div class="metric-val amber" id="st-low">—</div><div class="metric-lbl">Low (3–9)</div><div class="metric-sub">Order this week</div></div>
+        <div class="metric"><div class="metric-val green" id="st-ok">—</div><div class="metric-lbl">OK Stock</div><div class="metric-sub">No action needed</div></div>
+        <div class="metric"><div class="metric-val" id="st-matched">—</div><div class="metric-lbl">Matched to Sales</div><div class="metric-sub">Cross-referenced</div></div>
+      </div>
+
+      <!-- Filter -->
+      <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px">
+        <button class="studio-pill active" data-val="all" onclick="stockFilter(this,'all')">All Products</button>
+        <button class="studio-pill" data-val="critical" onclick="stockFilter(this,'critical')">🔴 Critical ≤2</button>
+        <button class="studio-pill" data-val="low" onclick="stockFilter(this,'low')">🟡 Low 3–9</button>
+        <button class="studio-pill" data-val="selling-fast" onclick="stockFilter(this,'selling-fast')">🔥 Selling Fast</button>
+        <button class="studio-pill" data-val="ok" onclick="stockFilter(this,'ok')">✅ OK</button>
+      </div>
+
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead><tr><th>Product</th><th>Stock Level</th><th>Sold This Week</th><th>Days Remaining</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody id="stock-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- AI reorder recommendations -->
+    <div id="stock-ai-section" style="display:none">
+      <div class="ai-card">
+        <div class="ai-card-hdr">
+          <h3>🤖 AI Reorder Recommendations</h3>
+          <button class="copy-btn" onclick="generateStockRecommendations()">Generate</button>
+        </div>
+        <div class="ai-card-body" id="stock-ai-body">Click Generate to get AI reorder priorities based on sales velocity and stock levels.</div>
+      </div>
+    </div>
+  </div>
 
 </div>
 
@@ -1936,6 +2060,57 @@ SEO RULES: Blog 500-700 words proper HTML (h2 h3 p strong ul li). Meta title max
 SOCIAL: All Instagram/Facebook MUST end: "📍 Chapeltown Road · Roundhay Road · City Centre · cchairandbeauty.com"
 NEVER: name competitors, use "look no further" or "one stop shop", invent product claims.`;
 
+// Build live context string from dashboard data — injected into every AI call
+function studioLiveContext() {
+  const sc = liveData.sc;
+  const sh = liveData.shopify;
+  const ad = liveData.ads;
+  const compare = liveData.compare;
+  const lines = [];
+
+  if(sh) {
+    lines.push(`\nLIVE BUSINESS DATA (use this to make content specific and timely):`);
+    lines.push(`- This week's revenue: £${(sh.weekRevenue||0).toFixed(2)} (${sh.weekOrders||0} orders)`);
+    lines.push(`- Today's revenue: £${(sh.todayRevenue||0).toFixed(2)} (${sh.todayOrders||0} orders)`);
+    if(sh.topProducts?.length) {
+      lines.push(`- TOP SELLING PRODUCTS THIS WEEK (reference these in content when relevant):`);
+      sh.topProducts.slice(0,8).forEach(p=>lines.push(`  · ${p.title} — ${p.quantity} sold (£${(p.revenue||0).toFixed(2)})`));
+    }
+  }
+
+  if(compare?.comparison?.length) {
+    const risers = compare.comparison.filter(p=>p.trend==='up').slice(0,3);
+    const newProds = compare.comparison.filter(p=>p.trend==='new').slice(0,3);
+    if(risers.length) lines.push(`- TRENDING UP vs last week: ${risers.map(p=>p.title).join(', ')}`);
+    if(newProds.length) lines.push(`- NEW THIS WEEK (first appearance): ${newProds.map(p=>p.title).join(', ')}`);
+  }
+
+  if(sc) {
+    lines.push(`\nSEARCH CONSOLE INSIGHTS (use to target keywords with proven demand):`);
+    lines.push(`- Weekly clicks: ${sc.totalClicks||0} | Impressions: ${(sc.totalImpressions||0).toLocaleString()} | Avg CTR: ${sc.avgPosition?((sc.totalClicks/Math.max(sc.totalImpressions,1))*100).toFixed(1)+'%':'—'} | Avg Position: ${(sc.avgPosition||0).toFixed(1)}`);
+    if(sc.lowCTR?.length) {
+      lines.push(`- HIGH OPPORTUNITY KEYWORDS (high impressions, low CTR — include these in blogs where relevant):`);
+      sc.lowCTR.slice(0,6).forEach(r=>lines.push(`  · "${r.query||r.q}" — ${(r.impressions||r.impr||0).toLocaleString()} impressions, ${(r.ctr||0).toFixed(2)}% CTR, pos ${(r.position||r.pos||0).toFixed(1)}`));
+    }
+    if(sc.nearPage1?.length) {
+      lines.push(`- NEAR PAGE 1 (a blog about these could push to top 5):`);
+      sc.nearPage1.slice(0,4).forEach(r=>lines.push(`  · "${r.query||r.q}" — pos ${(r.position||r.pos||0).toFixed(1)}, ${(r.impressions||r.impr||0).toLocaleString()} impressions`));
+    }
+  }
+
+  if(ad?.campaigns?.length) {
+    const best = ad.campaigns.filter(c=>c.conversions>0).sort((a,b)=>(a.cost/a.conversions)-(b.cost/b.conversions));
+    if(best.length) lines.push(`\nGOOGLE ADS: Best performing campaign: "${best[0].name}" at £${(best[0].cost/best[0].conversions).toFixed(2)} CPA — reinforce this in content.`);
+  }
+
+  if(liveData.analysis) {
+    const match = liveData.analysis.match(/## BLOG TO WRITE THIS WEEK\n([\s\S]*?)(?=\n##|$)/);
+    if(match) lines.push(`\nAI RECOMMENDATION THIS WEEK: ${match[1].trim().substring(0,200)}`);
+  }
+
+  return lines.length ? lines.join('\n') : '';
+}
+
 function studioMode(mode, btn) {
   document.querySelectorAll('.studio-mode-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('.studio-screen').forEach(s=>s.classList.remove('active'));
@@ -2042,11 +2217,13 @@ async function studioLoadUrl() {
   document.getElementById('studio-url-inp').value='';
 }
 
-// Studio Claude call
+// Studio Claude call — always injects live dashboard data
 async function studioCallClaude(system, user, maxTokens=4000) {
   const s=cfg();
   if(!s.key) { toast('Add Claude API key in ⚙ Settings','error'); openSettings(); throw new Error('No API key'); }
-  const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apiKey:s.key,model:'claude-sonnet-4-20250514',max_tokens:maxTokens,system,messages:[{role:'user',content:user}]})});
+  const liveCtx = studioLiveContext();
+  const fullSystem = system + (liveCtx ? '\n\n' + liveCtx : '');
+  const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apiKey:s.key,model:'claude-sonnet-4-20250514',max_tokens:maxTokens,system:fullSystem,messages:[{role:'user',content:user}]})});
   const d=await r.json();
   if(d.error) throw new Error(d.error.message||JSON.stringify(d.error));
   const raw=d.content?.[0]?.text||'';
@@ -2271,6 +2448,330 @@ if(_kwParam) {
     const tab=document.getElementById('tab-studio');
     if(tab){showTab('studio',tab);studioMode('keyword',document.getElementById('sm-keyword'));document.getElementById('sk-keyword').value=decodeURIComponent(_kwParam);}
   }, 1500);
+}
+
+// ── SEO AUDIT ─────────────────────────────────────────────────────────────────
+let seoAuditData = [];
+let seoFilteredData = [];
+
+async function loadSeoAudit() {
+  const s = cfg();
+  if(!s.token||!s.shop) {
+    document.getElementById('seo-loading').style.display='none';
+    document.getElementById('seo-empty').style.display='block';
+    return;
+  }
+  document.getElementById('seo-loading').style.display='block';
+  document.getElementById('seo-tbl-wrap').style.display='none';
+  document.getElementById('seo-score-banner').style.display='none';
+  document.getElementById('seo-empty').style.display='none';
+
+  try {
+    // Load products with metafields
+    const r = await fetch(`/api/shopify?domain=${s.shop}&token=${s.token}&endpoint=products&limit=250&status=active&fields=id,title,handle,images,metafields`);
+    const d = await r.json();
+    const prods = d.products || [];
+
+    seoAuditData = prods.map(p => {
+      const img = p.images?.[0];
+      const hasAlt = img?.alt && img.alt.trim().length > 0;
+      const metaTitle = p.title || ''; // Shopify uses product title as default meta title
+      const hasMetaTitle = metaTitle.length > 0;
+      const titleLen = metaTitle.length;
+      const titleTooShort = titleLen > 0 && titleLen < 25;
+      const titleTooLong = titleLen > 65;
+      const hasDesc = p.body_html && p.body_html.replace(/<[^>]+>/g,'').trim().length > 50;
+
+      let issues = [];
+      let severity = 'ok';
+      if(!hasMetaTitle) { issues.push('No meta title'); severity='critical'; }
+      else if(titleTooShort) { issues.push('Title too short ('+titleLen+' chars)'); if(severity!=='critical') severity='warning'; }
+      else if(titleTooLong) { issues.push('Title too long ('+titleLen+' chars)'); if(severity!=='critical') severity='warning'; }
+      if(!hasDesc) { issues.push('No description'); if(severity==='ok') severity='warning'; }
+      if(!hasAlt) { issues.push('No image alt text'); if(severity==='ok') severity='info'; }
+
+      return {
+        id: p.id, title: p.title, handle: p.handle,
+        image: img?.src||'', metaTitle, titleLen, hasDesc, hasAlt,
+        issues: issues.join(' · '), severity,
+      };
+    });
+
+    // Stats
+    const missing = seoAuditData.filter(p=>p.severity==='critical').length;
+    const shortLong = seoAuditData.filter(p=>p.severity==='warning').length;
+    const good = seoAuditData.filter(p=>p.severity==='ok').length;
+    document.getElementById('seo-s-total').textContent = seoAuditData.length;
+    document.getElementById('seo-s-missing').textContent = missing;
+    document.getElementById('seo-s-short').textContent = shortLong;
+    document.getElementById('seo-s-good').textContent = good;
+    document.getElementById('seo-count').textContent = (seoAuditData.length - good) + ' issues';
+    document.getElementById('seo-score-banner').style.display='block';
+
+    seoFilteredData = [...seoAuditData];
+    document.getElementById('seo-loading').style.display='none';
+    renderSeoTable();
+  } catch(e) {
+    document.getElementById('seo-loading').style.display='none';
+    document.getElementById('seo-empty').style.display='block';
+    toast('SEO audit error: '+e.message, 'error');
+  }
+}
+
+function seoFilter(btn, val) {
+  document.querySelectorAll('#seo-filter-pills .studio-pill').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(val==='all') seoFilteredData=[...seoAuditData];
+  else if(val==='no-meta') seoFilteredData=seoAuditData.filter(p=>p.severity==='critical');
+  else if(val==='no-desc') seoFilteredData=seoAuditData.filter(p=>!p.hasDesc);
+  else if(val==='short-title') seoFilteredData=seoAuditData.filter(p=>p.titleLen>0&&(p.titleLen<25||p.titleLen>65));
+  else if(val==='no-alt') seoFilteredData=seoAuditData.filter(p=>!p.hasAlt);
+  else if(val==='ok') seoFilteredData=seoAuditData.filter(p=>p.severity==='ok');
+  renderSeoTable();
+}
+
+function renderSeoTable() {
+  const tbody = document.getElementById('seo-tbody');
+  const wrap = document.getElementById('seo-tbl-wrap');
+  if(!seoFilteredData.length) { wrap.style.display='none'; return; }
+  wrap.style.display='block';
+  const severityBadge = s => s==='critical'?'<span style="background:var(--red-bg);color:var(--red);border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700">🔴 Critical</span>':
+    s==='warning'?'<span style="background:var(--yellow-bg);color:var(--yellow2);border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700">🟡 Warning</span>':
+    s==='info'?'<span style="background:var(--blue-bg);color:var(--blue);border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700">🔵 Minor</span>':
+    '<span style="background:var(--teal-light);color:var(--teal);border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700">✅ Good</span>';
+  tbody.innerHTML = seoFilteredData.map(p=>`<tr>
+    <td style="min-width:180px">
+      <div style="display:flex;align-items:center;gap:8px">
+        ${p.image?`<img src="${p.image}" style="width:32px;height:32px;border-radius:6px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">`:'<div style="width:32px;height:32px;border-radius:6px;background:var(--teal-light);flex-shrink:0"></div>'}
+        <div style="font-size:12px;font-weight:600;min-width:0;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${p.title}</div>
+      </div>
+    </td>
+    <td style="font-size:11px;color:${p.titleLen>0?'var(--ink2)':'var(--red)'}">${p.titleLen>0?p.titleLen+' chars':'❌ Missing'}</td>
+    <td style="font-size:11px;color:${p.hasDesc?'var(--teal)':'var(--red)'}">${p.hasDesc?'✓ Has desc':'❌ Missing'}</td>
+    <td style="font-size:11px;color:${p.hasAlt?'var(--teal)':'var(--yellow2)'}">${p.hasAlt?'✓ Has alt':'⚠ Missing'}</td>
+    <td>${p.issues?`<span style="font-size:11px;color:var(--ink2)">${p.issues}</span>`:'<span style="color:var(--teal);font-size:11px">No issues</span>'}</td>
+    <td style="display:flex;gap:5px;flex-wrap:wrap">
+      <a href="https://${cfg().shop.replace('.myshopify.com','')}.myshopify.com/admin/products/${p.id}" target="_blank" class="quick-btn" style="font-size:10px">Edit ↗</a>
+      ${p.severity!=='ok'?`<button class="quick-btn" style="font-size:10px" onclick="seoAutoFix('${p.id}','${p.title.replace(/'/g,"\\'")}','${p.handle}')">AI Fix →</button>`:''}
+    </td>
+  </tr>`).join('');
+}
+
+async function seoAutoFix(id, title, handle) {
+  const s = cfg();
+  if(!s.key){toast('Add Claude API key to use AI Fix','error');return;}
+  toast('Generating SEO fix for: '+title+'…');
+  try {
+    const r = await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      apiKey:s.key, model:'claude-sonnet-4-20250514', max_tokens:500,
+      system:`You are an SEO expert for CC Hair & Beauty (cchairandbeauty.com), Leeds UK Afro hair retailer. Write concise optimised meta tags.`,
+      messages:[{role:'user',content:`Write SEO meta tags for this product:\nProduct: ${title}\nURL: https://cchairandbeauty.com/products/${handle}\n\nReturn ONLY JSON: {"meta_title":"max 60 chars includes main keyword","meta_description":"max 155 chars compelling with keyword","image_alt":"descriptive alt text for product image"}`}]
+    })});
+    const d = await r.json();
+    const raw = d.content?.[0]?.text||'';
+    const m = raw.match(/\{[\s\S]*\}/);
+    if(!m) throw new Error('No JSON');
+    const fix = JSON.parse(m[0]);
+    // Show result in a toast-style popup
+    const msg = `Meta Title: ${fix.meta_title}\n\nMeta Desc: ${fix.meta_description}\n\nImage Alt: ${fix.image_alt}`;
+    navigator.clipboard.writeText(`Meta Title: ${fix.meta_title}\nMeta Description: ${fix.meta_description}\nImage Alt: ${fix.image_alt}`).then(()=>toast('SEO fix copied to clipboard ✓','success'));
+    alert(`SEO Fix for: ${title}\n\n${msg}\n\n(Also copied to clipboard)`);
+  } catch(e) { toast('Fix failed: '+e.message,'error'); }
+}
+
+function exportSeoAudit() {
+  if(!seoAuditData.length){toast('Run audit first','error');return;}
+  const rows = [['Product','Handle','Title Length','Has Description','Has Image Alt','Issues','Severity'].join('\t'),
+    ...seoAuditData.map(p=>[p.title,p.handle,p.titleLen,p.hasDesc?'Yes':'No',p.hasAlt?'Yes':'No',p.issues||'None',p.severity].join('\t'))
+  ].join('\n');
+  const blob=new Blob([rows],{type:'text/tab-separated-values'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=`cc-seo-audit-${new Date().toISOString().substring(0,10)}.tsv`;a.click();
+  URL.revokeObjectURL(url);toast('Exported ✓','success');
+}
+
+// ── STOCK INTELLIGENCE ────────────────────────────────────────────────────────
+let stockData = [];
+let stockFiltered = [];
+
+function handleStockDrop(e) {
+  e.preventDefault();
+  e.currentTarget.style.borderColor='var(--border2)';
+  loadStockFile(e.dataTransfer.files[0]);
+}
+
+async function loadStockFile(file) {
+  if(!file) return;
+  toast('Reading '+file.name+'…');
+  const text = await file.text();
+  let rows;
+  try {
+    rows = Papa.parse(text.trim(),{header:true,skipEmptyLines:true,dynamicTyping:false}).data||[];
+  } catch(e) { toast('Could not read file: '+e.message,'error'); return; }
+  if(!rows.length){toast('No data found in file','error');return;}
+
+  // Detect columns
+  const cols = Object.keys(rows[0]);
+  const nameCol = cols.find(c=>/product|name|description|item|title/i.test(c)) || cols[0];
+  const qtyCol = cols.find(c=>/qty|quantity|stock|level|on.hand|available|units/i.test(c));
+  const skuCol = cols.find(c=>/sku|barcode|code/i.test(c));
+
+  const toN = v => parseFloat(String(v||0).replace(/[,£$]/g,'').trim())||0;
+
+  // Build stock map
+  const stockMap = {};
+  rows.forEach(r => {
+    const name = (r[nameCol]||'').trim();
+    const qty = qtyCol ? toN(r[qtyCol]) : 0;
+    if(name) stockMap[name.toLowerCase()] = { name, qty, sku: skuCol?r[skuCol]:'' };
+  });
+
+  // Cross-reference with Shopify sales data
+  const sh = liveData.shopify;
+  const compare = liveData.compare;
+  const salesData = {};
+
+  if(compare?.comparison) {
+    compare.comparison.forEach(p => {
+      salesData[p.title.toLowerCase()] = { weekSales: p.quantity||0, revenue: p.revenue||0 };
+    });
+  }
+  if(sh?.topProducts) {
+    sh.topProducts.forEach(p => {
+      if(!salesData[p.title.toLowerCase()]) salesData[p.title.toLowerCase()] = { weekSales: p.quantity||0, revenue: p.revenue||0 };
+    });
+  }
+
+  // Build combined data — fuzzy match stock to sales
+  stockData = [];
+  Object.values(stockMap).forEach(item => {
+    const key = item.name.toLowerCase();
+    // Try exact match first, then partial
+    let sales = salesData[key];
+    if(!sales) {
+      const partial = Object.keys(salesData).find(k=>k.includes(key.substring(0,15))||key.includes(k.substring(0,15)));
+      if(partial) sales = salesData[partial];
+    }
+    const weekSales = sales?.weekSales || 0;
+    const daysRemaining = weekSales > 0 ? Math.round((item.qty / (weekSales/7))) : 999;
+    const status = item.qty <= 2 ? 'critical' : item.qty <= 9 ? 'low' : 'ok';
+    const sellingFast = weekSales >= 5 && item.qty <= 20;
+    stockData.push({ ...item, weekSales, daysRemaining, status, sellingFast, matched: !!sales });
+  });
+
+  // Sort: critical first, then by selling fast
+  stockData.sort((a,b) => {
+    const sev = {critical:0,low:1,ok:2};
+    if(sev[a.status]!==sev[b.status]) return sev[a.status]-sev[b.status];
+    return b.weekSales-a.weekSales;
+  });
+
+  // Update stats
+  const critical = stockData.filter(s=>s.status==='critical').length;
+  const low = stockData.filter(s=>s.status==='low').length;
+  const ok = stockData.filter(s=>s.status==='ok').length;
+  const matched = stockData.filter(s=>s.matched).length;
+
+  document.getElementById('st-critical').textContent = critical;
+  document.getElementById('st-low').textContent = low;
+  document.getElementById('st-ok').textContent = ok;
+  document.getElementById('st-matched').textContent = matched;
+  document.getElementById('stock-badge').textContent = critical+' critical · '+low+' low';
+
+  document.getElementById('stock-upload-prompt').style.display='none';
+  document.getElementById('stock-summary').style.display='block';
+  document.getElementById('stock-ai-section').style.display='block';
+
+  stockFiltered = [...stockData];
+  renderStockTable();
+  toast(`✓ ${stockData.length} products loaded · ${critical} critical · ${low} low stock`,'success');
+}
+
+function stockFilter(btn, val) {
+  document.querySelectorAll('#screen-stock .studio-pill').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(val==='all') stockFiltered=[...stockData];
+  else if(val==='critical') stockFiltered=stockData.filter(s=>s.status==='critical');
+  else if(val==='low') stockFiltered=stockData.filter(s=>s.status==='low');
+  else if(val==='selling-fast') stockFiltered=stockData.filter(s=>s.sellingFast);
+  else if(val==='ok') stockFiltered=stockData.filter(s=>s.status==='ok');
+  renderStockTable();
+}
+
+function renderStockTable() {
+  const tbody = document.getElementById('stock-tbody');
+  tbody.innerHTML = stockFiltered.slice(0,200).map(s => {
+    const statusBadge = s.status==='critical'
+      ? '<span style="background:var(--red-bg);color:var(--red);border-radius:20px;padding:2px 9px;font-size:10px;font-weight:700">🔴 Order NOW</span>'
+      : s.status==='low'
+      ? '<span style="background:var(--yellow-bg);color:var(--yellow2);border-radius:20px;padding:2px 9px;font-size:10px;font-weight:700">🟡 Order soon</span>'
+      : s.sellingFast
+      ? '<span style="background:rgba(255,118,117,.08);color:#e17055;border-radius:20px;padding:2px 9px;font-size:10px;font-weight:700">🔥 Selling fast</span>'
+      : '<span style="background:var(--teal-light);color:var(--teal);border-radius:20px;padding:2px 9px;font-size:10px;font-weight:700">✅ OK</span>';
+    const daysDisplay = s.daysRemaining===999?'—':s.daysRemaining<7?`<span style="color:var(--red);font-weight:700">${s.daysRemaining}d</span>`:`${s.daysRemaining}d`;
+    return `<tr>
+      <td class="kw">${s.name}</td>
+      <td class="${s.qty<=2?'bad':s.qty<=9?'ok':'good'}">${s.qty} units</td>
+      <td class="${s.weekSales>=5?'good':s.weekSales>0?'ok':'neu'}">${s.weekSales>0?s.weekSales+' sold':'no data'}</td>
+      <td>${daysDisplay}</td>
+      <td>${statusBadge}</td>
+      <td><button class="quick-btn" style="font-size:10px" onclick="copyText('Reorder: ${s.name.replace(/'/g,"\\'")} — ${s.qty} left, ${s.weekSales} sold this week')">Copy</button></td>
+    </tr>`;
+  }).join('');
+}
+
+async function generateStockRecommendations() {
+  const s=cfg();
+  if(!s.key){toast('Add Claude API key in Settings','error');return;}
+  if(!stockData.length){toast('Upload stock file first','error');return;}
+  const bodyEl=document.getElementById('stock-ai-body');
+  bodyEl.textContent='Generating AI recommendations…';
+
+  const critical=stockData.filter(s=>s.status==='critical');
+  const low=stockData.filter(s=>s.status==='low').slice(0,10);
+  const fast=stockData.filter(s=>s.sellingFast).slice(0,10);
+
+  const prompt=`CC Hair & Beauty stock analysis — provide specific reorder recommendations.
+
+CRITICAL STOCK (≤2 units — order immediately):
+${critical.slice(0,15).map(s=>`${s.name}: ${s.qty} left, ${s.weekSales} sold this week`).join('\n')||'None'}
+
+LOW STOCK (3-9 units):
+${low.map(s=>`${s.name}: ${s.qty} left, ${s.weekSales} sold this week`).join('\n')||'None'}
+
+SELLING FAST (high velocity, stock getting low):
+${fast.map(s=>`${s.name}: ${s.qty} left, ${s.weekSales} sold this week`).join('\n')||'None'}
+
+Write a concise reorder priority list:
+1. What to order TODAY (critical stock)
+2. What to order THIS WEEK (low stock, high velocity)
+3. Which products are your biggest risk of stockout
+4. Any patterns you notice (brands, categories)
+Keep it practical and actionable. Under 300 words.`;
+
+  try {
+    const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      apiKey:s.key,model:'claude-sonnet-4-20250514',max_tokens:600,
+      messages:[{role:'user',content:prompt}]
+    })});
+    const d=await r.json();
+    bodyEl.textContent=d.content?.[0]?.text||'No response';
+    toast('Stock recommendations generated ✓','success');
+  } catch(e) {
+    bodyEl.textContent='Error: '+e.message;
+    toast('Error: '+e.message,'error');
+  }
+}
+
+function exportStockReport() {
+  if(!stockData.length){toast('Upload stock file first','error');return;}
+  const rows=[['Product','Stock Level','Sold This Week','Days Remaining','Status'].join('\t'),
+    ...stockFiltered.map(s=>[s.name,s.qty,s.weekSales,s.daysRemaining===999?'Unknown':s.daysRemaining,s.status].join('\t'))
+  ].join('\n');
+  const blob=new Blob([rows],{type:'text/tab-separated-values'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=`cc-stock-report-${new Date().toISOString().substring(0,10)}.tsv`;a.click();
+  URL.revokeObjectURL(url);toast('Exported ✓','success');
 }
 </script>
 
