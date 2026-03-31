@@ -83,6 +83,8 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
 /* SECTION */
 .sec-title{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:10px;display:flex;align-items:center;gap:8px}
 .sec-title .badge{font-size:11px;font-weight:600;background:var(--teal-light);color:var(--teal);border-radius:20px;padding:2px 10px}
+.badge.blue{background:var(--blue-bg);color:var(--blue)}
+.badge.red{background:var(--red-bg);color:var(--red)}
 .sec-title .badge.amber{background:var(--yellow-bg);color:var(--yellow2)}
 
 /* PRIORITY ACTIONS */
@@ -278,7 +280,9 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
     <button class="tab-btn" id="tab-keywords" onclick="showTab('keywords',this)"><span>🔍 Keywords</span></button>
     <button class="tab-btn" id="tab-shopify" onclick="showTab('shopify',this)"><span>🛍️ Sales</span></button>
     <button class="tab-btn" id="tab-ads" onclick="showTab('ads',this)"><span>💰 Ads</span></button>
-    <button class="tab-btn" id="tab-history" onclick="showTab('history',this)"><span>📅 History</span></button>
+    <button class="tab-btn" id="tab-competitors" onclick="showTab('competitors',this);loadCompetitors()"><span>🏪 Competitors</span></button>
+    <button class="tab-btn" id="tab-calendar" onclick="showTab('calendar',this)"><span>📅 Content</span></button>
+    <button class="tab-btn" id="tab-history" onclick="showTab('history',this)"><span>📊 History</span></button>
   </div>
 
   <!-- OVERVIEW TAB -->
@@ -357,13 +361,36 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
     <div id="shopify-loading" class="loading-state"><div class="spin"></div><p>Loading Shopify data...</p></div>
     <div id="shopify-content" style="display:none">
       <div class="metrics-row" id="shopify-metrics"></div>
-      <div class="sec-title">🔥 Top Selling Products This Week</div>
-      <div class="tbl-wrap">
-        <table class="tbl">
-          <thead><tr><th>Product</th><th>Units Sold</th><th>Revenue</th><th>Action</th></tr></thead>
-          <tbody id="top-products"></tbody>
-        </table>
+
+      <!-- THIS WEEK VS LAST WEEK -->
+      <div class="sec-title">📦 This Week vs Last Week — Product Comparison</div>
+      <div id="compare-loading" style="text-align:center;padding:20px;color:var(--ink3);font-size:13px">Loading comparison...</div>
+      <div id="compare-content" style="display:none">
+        <div class="tbl-wrap" style="margin-bottom:16px">
+          <table class="tbl">
+            <thead><tr>
+              <th>Product</th>
+              <th>This Week</th>
+              <th>Last Week</th>
+              <th>Change</th>
+              <th>Revenue</th>
+              <th>Action</th>
+            </tr></thead>
+            <tbody id="compare-tbody"></tbody>
+          </table>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+          <div class="ai-card">
+            <div class="ai-card-hdr"><h3>📈 Week Summary</h3></div>
+            <div class="ai-card-body" id="week-summary-text" style="font-size:13px"></div>
+          </div>
+          <div class="ai-card">
+            <div class="ai-card-hdr"><h3>🚨 Stock Alerts</h3></div>
+            <div class="ai-card-body" id="stock-alerts" style="font-size:13px"></div>
+          </div>
+        </div>
       </div>
+
       <div class="sec-title">📋 Recent Orders</div>
       <div class="tbl-wrap">
         <table class="tbl">
@@ -402,17 +429,130 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
         <button onclick="resetAdsData()" style="background:var(--card2);border:1px solid var(--border2);color:var(--ink3);border-radius:8px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">Upload new file</button>
       </div>
       <div class="metrics-row" id="ads-metrics"></div>
-      <div class="sec-title">Campaign Performance</div>
-      <div class="tbl-wrap">
+
+      <!-- VERDICT ENGINE -->
+      <div class="sec-title">🎯 Campaign Decisions — What To Do With Each Campaign</div>
+      <div class="tbl-wrap" style="margin-bottom:16px">
         <table class="tbl">
-          <thead><tr><th>Campaign</th><th>Spend</th><th>Clicks</th><th>Conv.</th><th>CPA</th><th>ROAS</th></tr></thead>
+          <thead><tr>
+            <th>Campaign</th>
+            <th>Spend</th>
+            <th>Clicks</th>
+            <th>Conv.</th>
+            <th>CPA</th>
+            <th>ROAS</th>
+            <th>Verdict</th>
+          </tr></thead>
           <tbody id="ads-tbody"></tbody>
         </table>
       </div>
+
+      <!-- WASTED SPEND ALERT -->
+      <div id="wasted-spend-section" style="display:none;margin-bottom:16px">
+        <div class="sec-title">🔥 Wasted Spend Alert</div>
+        <div class="ai-card">
+          <div class="ai-card-hdr" style="background:linear-gradient(135deg,var(--red),#c0392b)"><h3>Campaigns spending with no conversions</h3></div>
+          <div class="ai-card-body" id="wasted-spend-content" style="font-size:13px"></div>
+        </div>
+      </div>
+
+      <!-- BUDGET REBALANCER -->
+      <div class="sec-title">💡 Budget Rebalancer</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        <div class="ai-card">
+          <div class="ai-card-hdr"><h3>📊 Current Spend Split</h3></div>
+          <div class="ai-card-body" id="spend-split" style="font-size:12px"></div>
+        </div>
+        <div class="ai-card">
+          <div class="ai-card-hdr"><h3>✅ Recommended Split</h3></div>
+          <div class="ai-card-body" id="recommended-split" style="font-size:12px"></div>
+        </div>
+      </div>
+
       <div class="ai-card">
-        <div class="ai-card-hdr"><h3>Ads Budget Recommendations</h3><button class="copy-btn" onclick="copyText('ads-rec')">Copy</button></div>
+        <div class="ai-card-hdr"><h3>🤖 AI Ads Budget Recommendations</h3><button class="copy-btn" onclick="copyText('ads-rec')">Copy</button></div>
         <div class="ai-card-body" id="ads-rec">Loading...</div>
       </div>
+    </div>
+  </div>
+
+  <!-- COMPETITORS TAB -->
+  <div class="screen" id="screen-competitors">
+    <div id="comp-loading" class="loading-state"><div class="spin"></div><p>Loading competitor data...</p></div>
+    <div id="comp-content" style="display:none">
+
+      <!-- MAP PACK -->
+      <div class="sec-title">🗺️ Google Map Pack — who appears when Leeds customers search</div>
+      <div id="map-pack-grid" style="margin-bottom:16px"></div>
+
+      <!-- NEARBY COMPETITORS -->
+      <div class="sec-title">🏪 Nearby Hair & Beauty Businesses <span class="badge" id="comp-count"></span></div>
+      <div id="comp-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px"></div>
+
+      <!-- COMPETITOR INTEL -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        <!-- PAK'S ANALYSIS -->
+        <div class="ai-card">
+          <div class="ai-card-hdr"><h3>🏆 Pak's Cosmetics — What They're Doing</h3></div>
+          <div class="ai-card-body" style="font-size:12px">
+            <strong>Strengths:</strong> Europe's largest Afro retailer · 7 UK stores · 1,708 Trustpilot reviews · 10K Instagram followers · Posts daily · Competes on price and delivery speed<br><br>
+            <strong>Weaknesses:</strong> London-based — no Leeds community connection · Generic nationwide content · No local SEO for Leeds searches · Delivery takes 2-3 days from London<br><br>
+            <strong>Your advantage:</strong> You've been in Leeds since 1979. Same-day collection. Local community trust. Stock specific to Leeds demand. Counter their price advantage with your local knowledge and convenience.
+          </div>
+        </div>
+        <!-- SHABA ANALYSIS -->
+        <div class="ai-card">
+          <div class="ai-card-hdr"><h3>🏪 Shaba Cosmetics — Current Opportunity</h3></div>
+          <div class="ai-card-body" style="font-size:12px">
+            <strong>Status:</strong> Website currently down for maintenance — customers cannot buy online right now<br><br>
+            <strong>Their reviews:</strong> 474 Trustpilot reviews but multiple complaints about fake products and poor customer service<br><br>
+            <strong>Opportunity:</strong> Post on social media targeting anyone searching for Shaba brands. "Can't find [brand] online? We have it in stock — same day collection Leeds." Their disruption is your sales opportunity. Also rank for their brand keywords while their SEO weakens.
+          </div>
+        </div>
+      </div>
+
+      <!-- REVIEW COMPARISON -->
+      <div class="sec-title">⭐ Review Tracker — Your Branches vs Competitors</div>
+      <div id="review-tracker" class="ai-card">
+        <div class="ai-card-hdr"><h3>Google Reviews This Week</h3><button class="copy-btn" onclick="copyText('review-content')">Copy</button></div>
+        <div class="ai-card-body" id="review-content">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+            <div>
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);margin-bottom:8px">Your branches (update weekly)</div>
+              <div style="font-size:13px;line-height:2">
+                🏪 Chapeltown LS7 — track reviews<br>
+                🏪 Roundhay LS8 — track reviews<br>
+                🏪 City Centre — track reviews
+              </div>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);margin-bottom:8px">Action this week</div>
+              <div style="font-size:12px;color:var(--ink2);line-height:1.8">
+                ✅ Send WhatsApp review requests to last week's customers<br>
+                ✅ Reply to all unanswered reviews<br>
+                ✅ Upload 5 new photos to each GBP<br>
+                ✅ Target: 5 new reviews per branch per week
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENT CALENDAR TAB -->
+  <div class="screen" id="screen-calendar">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+      <div class="sec-title" style="margin:0">📅 4-Week Content Calendar <span class="badge blue" id="cal-status">AI Generated</span></div>
+      <button onclick="generateCalendar()" style="background:var(--teal);color:#fff;border:none;border-radius:var(--r);padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">↺ Regenerate Calendar</button>
+    </div>
+    <div id="cal-loading" class="loading-state" style="display:none"><div class="spin"></div><p>Generating your 4-week content calendar based on live data...</p></div>
+    <div id="cal-content"></div>
+    <div id="cal-empty" style="text-align:center;padding:40px;color:var(--ink3)">
+      <div style="font-size:32px;margin-bottom:12px">📅</div>
+      <div style="font-size:14px;font-weight:600;margin-bottom:6px">Generate your content calendar</div>
+      <div style="font-size:12px;margin-bottom:16px">Uses your live keyword data, top selling products and competitor analysis to create a ready-to-use 4-week plan</div>
+      <button onclick="generateCalendar()" style="background:var(--teal);color:#fff;border:none;border-radius:var(--r);padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Generate Calendar →</button>
     </div>
   </div>
 
@@ -613,6 +753,7 @@ async function refreshAll(){
   renderKeywords();
   renderShopify();
   renderAds();
+  loadWeekComparison();
 
   // Run AI analysis after data is loaded
   if(liveData.sc || liveData.ads){
@@ -915,8 +1056,44 @@ function renderAds(){
     {val:cpa>0?fmtGbp(cpa):'N/A',lbl:'Cost/Conv',sub:cpa<10?'Excellent':cpa<20?'OK':'Review',cls:cpa>0&&cpa<10?'green':cpa>20?'red':'amber'},
   ].map(m=>`<div class="metric"><div class="metric-val ${m.cls}">${m.val}</div><div class="metric-lbl">${m.lbl}</div><div class="metric-sub">${m.sub}</div></div>`).join('');
 
+  const avgOrderVal = liveData.shopify ? (liveData.shopify.weekRevenue/Math.max(liveData.shopify.weekOrders,1)) : 30;
+  const wastedCamps = (ad.campaigns||[]).filter(c=>c.conversions===0&&c.cost>5);
+  
+  if(wastedCamps.length){
+    document.getElementById('wasted-spend-section').style.display='block';
+    const wastedTotal=wastedCamps.reduce((s,c)=>s+c.cost,0);
+    document.getElementById('wasted-spend-content').innerHTML=`
+      <div style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:8px">£${wastedTotal.toFixed(2)} spent with zero conversions — pause these campaigns immediately</div>
+      ${wastedCamps.map(c=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">
+        <span>${c.name}</span><span style="font-weight:700;color:var(--red)">£${c.cost.toFixed(2)} wasted</span>
+      </div>`).join('')}
+      <div style="margin-top:10px;font-size:12px;color:var(--ink2)">Redirect this £${wastedTotal.toFixed(2)} to your best-performing campaigns. Go to Google Ads → Campaigns → toggle off each one above.</div>`;
+  }
+
+  // Spend split
+  const totalS=ad.totalSpend||1;
+  const spendSplitEl=document.getElementById('spend-split');
+  const recSplitEl=document.getElementById('recommended-split');
+  if(spendSplitEl){
+    spendSplitEl.innerHTML=(ad.campaigns||[]).map(c=>`
+      <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:0.5px solid var(--border)">
+        <span>${c.name}</span>
+        <span><strong>£${c.cost.toFixed(2)}</strong> (${(c.cost/totalS*100).toFixed(0)}%)</span>
+      </div>`).join('');
+  }
+  if(recSplitEl){
+    const goodCamps=(ad.campaigns||[]).filter(c=>c.conversions>0);
+    const goodTotal=goodCamps.reduce((s,c)=>s+c.cost,0)||1;
+    recSplitEl.innerHTML=goodCamps.length?goodCamps.map(c=>`
+      <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:0.5px solid var(--border)">
+        <span>${c.name}</span>
+        <span style="color:var(--teal)"><strong>£${(ad.totalSpend*(c.cost/goodTotal)).toFixed(2)}</strong> recommended</span>
+      </div>`).join(''):'<div style="color:var(--ink3);font-size:12px">No converting campaigns yet — review search terms and add negative keywords</div>';
+  }
+
   document.getElementById('ads-tbody').innerHTML=(ad.campaigns||[]).map(c=>{
     const cpa2=c.conversions>0?(c.cost/c.conversions):0;
+    const v=getVerdict(c,avgOrderVal);
     return`<tr>
       <td class="kw">${c.name||''}</td>
       <td>${fmtGbp(c.cost||0)}</td>
@@ -924,6 +1101,7 @@ function renderAds(){
       <td class="${c.conversions>0?'good':'neu'}">${(c.conversions||0).toFixed(1)}</td>
       <td class="${cpa2<10?'good':cpa2>20?'bad':'ok'}">${cpa2>0?fmtGbp(cpa2):'-'}</td>
       <td class="${c.roas>3?'good':c.roas>1?'ok':'bad'}">${c.roas?c.roas.toFixed(1)+'x':'-'}</td>
+      <td><span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;${v.cls}">${v.label}</span></td>
     </tr>`;
   }).join('');
 }
@@ -1132,6 +1310,242 @@ function downloadReport(){
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
   a.download='cc-intel-'+new Date().toISOString().split('T')[0]+'.txt';a.click();
   toast('Downloaded ✓','success');
+}
+
+
+// ── WEEK COMPARISON ───────────────────────────────────────────────────────────
+async function loadWeekComparison(){
+  const s=cfg();
+  if(!s.token||!s.shop)return;
+  try{
+    const r=await fetch('/api/shopify-compare?domain='+s.shop+'&token='+s.token);
+    const d=await r.json();
+    if(d.error)throw new Error(d.error);
+    renderComparison(d);
+  }catch(e){
+    document.getElementById('compare-loading').textContent='Could not load comparison: '+e.message;
+  }
+}
+
+function renderComparison(d){
+  document.getElementById('compare-loading').style.display='none';
+  document.getElementById('compare-content').style.display='block';
+
+  const revDiff = d.revenueDiff||0;
+  const revPct = (d.revenueChange||0).toFixed(1);
+  
+  document.getElementById('compare-tbody').innerHTML=(d.comparison||[]).map(p=>{
+    const trendIcon = p.trend==='up'?'<span style="color:var(--teal)">↑ +'+p.diff+'</span>':
+      p.trend==='down'?'<span style="color:var(--red)">↓ '+p.diff+'</span>':
+      p.trend==='new'?'<span style="color:var(--blue)">★ NEW</span>':
+      '<span style="color:var(--ink3)">→ same</span>';
+    return`<tr>
+      <td class="kw">${p.title||'Unknown'}</td>
+      <td class="${p.quantity>0?'good':''}">${p.quantity} sold</td>
+      <td class="neu">${p.lastQty} sold</td>
+      <td>${trendIcon}</td>
+      <td>${fmtGbp(p.revenue||0)}</td>
+      <td><button class="quick-btn" onclick="openStudio('${(p.title||'').replace(/'/g,"\'")}')">Blog →</button></td>
+    </tr>`;
+  }).join('');
+
+  const summaryEl=document.getElementById('week-summary-text');
+  if(summaryEl){
+    const arrow=revDiff>=0?'↑':'↓';
+    summaryEl.innerHTML=`
+      <div style="margin-bottom:10px">
+        <strong>This week:</strong> ${fmtGbp(d.thisWeek?.revenue||0)} (${d.thisWeek?.orders||0} orders)<br>
+        <strong>Last week:</strong> ${fmtGbp(d.lastWeek?.revenue||0)} (${d.lastWeek?.orders||0} orders)<br>
+        <strong style="color:${revDiff>=0?'var(--teal)':'var(--red)'}">${arrow} ${Math.abs(parseFloat(revPct))}% ${revDiff>=0?'increase':'decrease'} week on week</strong>
+      </div>
+      <div style="font-size:11px;color:var(--ink3)">
+        ${revDiff>0?'Good week — keep momentum going with social posts on your top sellers.':'Below last week. Review which products dropped and consider a quick promotion.'}
+      </div>`;
+  }
+
+  // Stock alerts for top sellers
+  const stockEl=document.getElementById('stock-alerts');
+  if(stockEl){
+    const highSellers=(d.comparison||[]).filter(p=>p.quantity>=5);
+    stockEl.innerHTML=highSellers.length?highSellers.map(p=>
+      `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:14px">${p.quantity>=10?'🔴':'🟡'}</span>
+        <div><div style="font-size:12px;font-weight:600">${p.title}</div>
+        <div style="font-size:11px;color:var(--ink3)">${p.quantity} sold this week — check stock levels</div></div>
+      </div>`).join(''):'<div style="color:var(--ink3);font-size:12px">No high-volume sellers flagged this week</div>';
+  }
+}
+
+// ── COMPETITORS ────────────────────────────────────────────────────────────────
+async function loadCompetitors(){
+  const key=process?.env?.GOOGLE_PLACES_API_KEY;
+  document.getElementById('comp-loading').style.display='none';
+  document.getElementById('comp-content').style.display='block';
+  
+  try{
+    const r=await fetch('/api/competitors');
+    const d=await r.json();
+    if(d.error&&d.error.includes('not set')){
+      document.getElementById('comp-loading').style.display='block';
+      document.getElementById('comp-loading').innerHTML='<div style="text-align:center;padding:32px"><div style="font-size:32px;margin-bottom:10px">🗺️</div><div style="font-size:14px;font-weight:600;margin-bottom:6px">Add Google Places API key to enable live competitor tracking</div><div style="font-size:12px;color:var(--ink3)">Go to Vercel → Settings → Environment Variables → Add GOOGLE_PLACES_API_KEY<br>Costs approximately £0.78/month</div></div>';
+      document.getElementById('comp-content').style.display='none';
+      return;
+    }
+    renderCompetitors(d);
+  }catch(e){
+    document.getElementById('comp-loading').innerHTML='<div style="color:var(--ink3);text-align:center;padding:20px">Error loading competitor data: '+e.message+'</div>';
+  }
+}
+
+function renderCompetitors(d){
+  document.getElementById('comp-count').textContent=(d.competitors||[]).length+' found';
+  
+  // Map pack
+  const mpGrid=document.getElementById('map-pack-grid');
+  if(mpGrid&&d.mapPack){
+    mpGrid.innerHTML=(d.mapPack||[]).map(mp=>`
+      <div class="ai-card" style="margin-bottom:10px">
+        <div class="ai-card-hdr" style="background:${mp.youInPack?'linear-gradient(135deg,var(--teal),var(--teal2))':'linear-gradient(135deg,var(--red),#c0392b)'}">
+          <h3>"${mp.query}" — ${mp.monthly.toLocaleString()} searches/month</h3>
+          <span style="background:rgba(255,255,255,.2);color:#fff;font-size:11px;padding:3px 10px;border-radius:20px">${mp.youInPack?'✓ YOU ARE IN':'✗ YOU ARE MISSING'}</span>
+        </div>
+        <div class="ai-card-body">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+            ${(mp.results||[]).map(r=>`
+              <div style="border:1.5px solid ${r.isYou?'var(--teal)':'var(--border2)'};border-radius:10px;padding:10px;background:${r.isYou?'var(--teal-light)':'var(--card)'}">
+                <div style="font-size:10px;color:var(--ink3);margin-bottom:3px">Position ${r.position}</div>
+                <div style="font-size:12px;font-weight:700;margin-bottom:2px">${r.isYou?'✓ CC Hair & Beauty':r.name}</div>
+                <div style="font-size:11px;color:var(--ink3)">${r.rating} stars · ${r.reviews} reviews</div>
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  // Nearby competitors
+  const grid=document.getElementById('comp-grid');
+  if(grid){
+    grid.innerHTML=(d.competitors||[]).map(c=>`
+      <div style="background:var(--card);border:0.5px solid var(--border2);border-radius:10px;padding:12px">
+        <div style="font-size:12px;font-weight:700;margin-bottom:2px">${c.name}</div>
+        <div style="font-size:10px;color:var(--ink3);margin-bottom:8px">${c.address||'Leeds'}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <div style="background:var(--card2);border-radius:6px;padding:6px;text-align:center">
+            <div style="font-size:16px;font-weight:700">${c.rating||'—'}</div>
+            <div style="font-size:9px;color:var(--ink3)">Rating</div>
+          </div>
+          <div style="background:var(--card2);border-radius:6px;padding:6px;text-align:center">
+            <div style="font-size:16px;font-weight:700">${c.reviewCount||0}</div>
+            <div style="font-size:9px;color:var(--ink3)">Reviews</div>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+}
+
+// ── CONTENT CALENDAR ───────────────────────────────────────────────────────────
+async function generateCalendar(){
+  const s=cfg();
+  if(!s.key){
+    toast('Add your Claude API key in Settings first','error');
+    openSettings();
+    return;
+  }
+  document.getElementById('cal-loading').style.display='block';
+  document.getElementById('cal-content').innerHTML='';
+  document.getElementById('cal-empty').style.display='none';
+  document.getElementById('cal-status').textContent='Generating...';
+
+  try{
+    const r=await fetch('/api/content-calendar',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        apiKey:s.key,
+        scData:liveData.sc,
+        shopifyData:liveData.shopify,
+        adsData:liveData.ads,
+      })
+    });
+    const d=await r.json();
+    if(d.error)throw new Error(d.error);
+    renderCalendar(d);
+  }catch(e){
+    document.getElementById('cal-loading').style.display='none';
+    document.getElementById('cal-empty').style.display='block';
+    toast('Calendar error: '+e.message,'error');
+  }
+}
+
+function renderCalendar(d){
+  document.getElementById('cal-loading').style.display='none';
+  document.getElementById('cal-status').textContent='AI Generated';
+  const weeks=d.weeks||[];
+  
+  const weekColors=['var(--teal)','var(--blue)','var(--purple)','var(--yellow2)'];
+  
+  document.getElementById('cal-content').innerHTML=weeks.map((w,i)=>`
+    <div style="background:var(--card);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px;border-left:4px solid ${weekColors[i%4]}">
+      <div style="background:var(--card2);padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:14px;font-weight:700">Week ${w.week} — ${w.theme||''}</div>
+        <div style="font-size:11px;color:var(--ink3)">Blog + 3 social posts + GBP + review ask</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+
+        <!-- BLOG -->
+        <div style="padding:14px 18px;border-right:1px solid var(--border);border-bottom:1px solid var(--border)">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--teal);margin-bottom:8px">📝 Blog Post</div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:4px">${w.blog?.title||''}</div>
+          <div style="font-size:11px;color:var(--ink3);margin-bottom:6px">Keyword: <strong>${w.blog?.keyword||''}</strong></div>
+          <div style="font-size:11px;color:var(--ink2);margin-bottom:8px">${w.blog?.why||''}</div>
+          ${w.blog?.outline?`<div style="font-size:11px;color:var(--ink2)">${w.blog.outline.map(o=>`<div style="padding:2px 0;border-bottom:0.5px solid var(--border)">• ${o}</div>`).join('')}</div>`:''}
+          <button onclick="openStudio('${(w.blog?.keyword||'').replace(/'/g,"\'")}');toast('Opening Content Studio for: ${(w.blog?.keyword||'').replace(/'/g,"\'")}','success')" style="margin-top:10px;background:var(--teal-light);color:var(--teal);border:1px solid var(--teal);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Write in Content Studio →</button>
+        </div>
+
+        <!-- ADS FOCUS -->
+        <div style="padding:14px 18px;border-bottom:1px solid var(--border)">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--yellow2);margin-bottom:8px">💰 Google Ads Focus</div>
+          <div style="font-size:12px;color:var(--ink2);line-height:1.6">${w.ads_focus||'Adjust budget based on campaign performance'}</div>
+        </div>
+
+        <!-- SOCIAL POSTS -->
+        <div style="padding:14px 18px;border-right:1px solid var(--border)">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--blue);margin-bottom:8px">📱 Social Media Posts</div>
+          ${(w.social||[]).map(s=>`
+            <div style="background:var(--card2);border-radius:8px;padding:10px;margin-bottom:8px">
+              <div style="font-size:10px;font-weight:700;color:var(--ink3);margin-bottom:4px">${s.day} — ${s.platform}</div>
+              <div style="font-size:12px;color:var(--ink);margin-bottom:4px;line-height:1.5">${s.caption||''}</div>
+              <div style="font-size:11px;color:var(--blue)">${s.hashtags||''}</div>
+              <button onclick="navigator.clipboard.writeText('${(s.caption||'').replace(/'/g,"\'")+' '+(s.hashtags||'').replace(/'/g,"\'")}').then(()=>toast('Caption copied!','success'))" style="margin-top:6px;background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue);border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;font-family:inherit">Copy caption</button>
+            </div>`).join('')}
+        </div>
+
+        <!-- GBP + REVIEW ASK -->
+        <div style="padding:14px 18px">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--teal2);margin-bottom:8px">🏪 Google Business Profile</div>
+          <div style="background:var(--card2);border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px;color:var(--ink2);line-height:1.5">${w.gbp||'Post about your top seller this week'}</div>
+          <button onclick="navigator.clipboard.writeText('${(w.gbp||'').replace(/'/g,"\'")}').then(()=>toast('GBP post copied!','success'))" style="background:var(--teal-light);color:var(--teal);border:1px solid var(--teal);border-radius:6px;padding:4px 10px;font-size:10px;cursor:pointer;font-family:inherit;margin-bottom:12px">Copy GBP post</button>
+          
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--purple);margin-bottom:6px">⭐ WhatsApp Review Request</div>
+          <div style="background:var(--card2);border-radius:8px;padding:10px;font-size:12px;color:var(--ink2);line-height:1.5">${w.review_ask||'Thank you for shopping with us! Please leave a review.'}</div>
+          <button onclick="navigator.clipboard.writeText('${(w.review_ask||'').replace(/'/g,"\'")}').then(()=>toast('Review message copied!','success'))" style="margin-top:6px;background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple);border-radius:6px;padding:4px 10px;font-size:10px;cursor:pointer;font-family:inherit">Copy WhatsApp message</button>
+        </div>
+
+      </div>
+    </div>`).join('');
+
+  toast('4-week content calendar generated!','success');
+}
+
+// ── ENHANCED RENDER ADS WITH VERDICTS ─────────────────────────────────────────
+function getVerdict(campaign, avgOrderValue){
+  const cpa = campaign.conversions>0 ? (campaign.cost/campaign.conversions) : 999;
+  const spend = campaign.cost||0;
+  if(campaign.conversions===0 && spend>5) return {label:'PAUSE',cls:'background:var(--red-bg);color:var(--red);border:1px solid var(--red)',reason:'Spending with zero conversions'};
+  if(cpa < avgOrderValue*0.3) return {label:'INCREASE ↑',cls:'background:var(--teal-light);color:var(--teal);border:1px solid var(--teal)',reason:'Excellent ROI — put more here'};
+  if(cpa < avgOrderValue*0.5) return {label:'KEEP',cls:'background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue)',reason:'Profitable — maintain budget'};
+  if(cpa < avgOrderValue) return {label:'REDUCE ↓',cls:'background:var(--yellow-bg);color:var(--yellow2);border:1px solid var(--yellow2)',reason:'Marginal — cut budget 30%'};
+  return {label:'PAUSE',cls:'background:var(--red-bg);color:var(--red);border:1px solid var(--red)',reason:'CPA exceeds order value'};
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
