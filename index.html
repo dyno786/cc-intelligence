@@ -299,6 +299,8 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
     <div id="overview-loading" class="loading-state"><div class="spin"></div><p>Loading live data...</p></div>
     <div id="overview-error" style="display:none;background:var(--red-bg);border:1px solid var(--red);border-radius:var(--r2);padding:12px 16px;margin:10px 0;font-size:12px;color:var(--red)"></div>
     <div id="overview-content" style="display:none">
+
+      <!-- HEADER BANNER -->
       <div class="week-hdr">
         <div class="week-hdr-left">
           <h2 id="wh-title">This Week's Intelligence Report</h2>
@@ -309,18 +311,99 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
           <div class="lbl">SEO Score /10</div>
         </div>
       </div>
+
+      <!-- ROW 1: 4 TOP METRICS -->
       <div class="metrics-row">
         <div class="metric"><div class="metric-val green" id="m-clicks">—</div><div class="metric-lbl">Weekly Clicks</div><div class="metric-trend" id="m-clicks-t"></div></div>
         <div class="metric"><div class="metric-val" id="m-impr">—</div><div class="metric-lbl">Impressions</div><div class="metric-trend" id="m-impr-t"></div></div>
         <div class="metric"><div class="metric-val" id="m-ctr">—</div><div class="metric-lbl">Avg CTR</div><div class="metric-trend" id="m-ctr-t"></div></div>
         <div class="metric"><div class="metric-val" id="m-pos">—</div><div class="metric-lbl">Avg Position</div><div class="metric-trend" id="m-pos-t"></div></div>
       </div>
-      <div class="insights-grid" id="insights-grid"></div>
-      <div class="sec-title">📦 Today's Shopify Activity</div>
-      <div class="live-grid" id="shopify-live"></div>
-      <div style="text-align:right;margin-top:-12px;margin-bottom:16px">
-        <button class="copy-btn-dk" onclick="showTab('actions',document.getElementById('tab-actions'))">View full action plan →</button>
+
+      <!-- ROW 2: TOP SELLERS + KEYWORD OPPORTUNITIES (side by side) -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+
+        <!-- TOP SELLING PRODUCTS: THIS WEEK vs LAST WEEK -->
+        <div style="background:var(--card);border-radius:var(--r2);box-shadow:var(--shadow);overflow:hidden">
+          <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink)">Top Selling Products</div>
+            <div style="display:flex;gap:8px;font-size:10px;font-weight:700">
+              <span style="background:var(--teal-light);color:var(--teal);padding:2px 8px;border-radius:20px">THIS WEEK</span>
+              <span style="color:var(--ink3)">LAST WEEK</span>
+            </div>
+          </div>
+          <div id="ov-top-sellers" style="padding:4px 0">
+            <div style="text-align:center;padding:20px;color:var(--ink3);font-size:12px">Loading...</div>
+          </div>
+          <div style="padding:8px 16px;border-top:1px solid var(--border);font-size:10px;color:var(--ink3)">↑ up vs last week &nbsp; ↓ down &nbsp; → same &nbsp; <span style="color:var(--blue)">★ NEW</span> = first appearance</div>
+        </div>
+
+        <!-- BIGGEST KEYWORD OPPORTUNITIES -->
+        <div style="background:var(--card);border-radius:var(--r2);box-shadow:var(--shadow);overflow:hidden">
+          <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink)">Biggest Keyword Opportunities</div>
+            <span id="ov-kw-badge" style="background:var(--red-bg);color:var(--red);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap">— TO FIX</span>
+          </div>
+          <div id="ov-keywords" style="padding:4px 0">
+            <div style="text-align:center;padding:20px;color:var(--ink3);font-size:12px">Loading...</div>
+          </div>
+          <div style="padding:8px 16px;border-top:1px solid var(--border);font-size:10px;color:var(--ink3)">CTR below 1% = fix meta title first. Below 2% = write a blog.</div>
+        </div>
       </div>
+
+      <!-- ROW 3: CAMPAIGN DECISIONS (full width) -->
+      <div id="ov-campaign-section" style="background:var(--card);border-radius:var(--r2);box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden">
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink)">Google Ads — What To Do With Each Campaign</div>
+          <div style="font-size:11px;color:var(--ink3)" id="ov-ads-summary"></div>
+        </div>
+        <div id="ov-campaigns" style="padding:4px 0">
+          <div style="text-align:center;padding:16px;color:var(--ink3);font-size:12px">Upload Google Ads CSV in the Ads tab to see campaign decisions here</div>
+        </div>
+        <div style="padding:8px 16px;border-top:1px solid var(--border);font-size:10px;color:var(--ink3)">KEEP = profitable. INCREASE = excellent ROI. REDUCE = marginal, cut 50%. PAUSE = zero return, stop now.</div>
+      </div>
+
+      <!-- ROW 4: ACTION PLAN + REVENUE TREND (side by side) -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+
+        <!-- THIS WEEK'S ACTION PLAN -->
+        <div style="background:var(--card);border-radius:var(--r2);box-shadow:var(--shadow);overflow:hidden">
+          <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink)">This Week's Action Plan</div>
+            <span style="background:var(--teal-light);color:var(--teal);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">AI GENERATED</span>
+          </div>
+          <div id="ov-action-plan" style="padding:8px 12px">
+            <div style="text-align:center;padding:16px;color:var(--ink3);font-size:12px">Add Claude API key in Settings to generate action plan</div>
+          </div>
+          <div style="padding:8px 16px;border-top:1px solid var(--border)">
+            <button onclick="showTab('actions',document.getElementById('tab-actions'))" style="font-size:11px;font-weight:600;color:var(--teal);background:none;border:none;cursor:pointer;font-family:inherit;padding:0">View full action plan →</button>
+          </div>
+        </div>
+
+        <!-- REVENUE TREND + SHOPIFY LIVE -->
+        <div style="background:var(--card);border-radius:var(--r2);box-shadow:var(--shadow);overflow:hidden">
+          <div style="padding:12px 16px;border-bottom:1px solid var(--border)">
+            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink)">Revenue Trend — Last 8 Weeks</div>
+          </div>
+          <div style="padding:14px 16px">
+            <div id="ov-rev-chart" style="display:flex;align-items:flex-end;gap:6px;height:60px;margin-bottom:12px">
+              <div style="font-size:11px;color:var(--ink3)">Loading...</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+              <div>
+                <div style="font-size:22px;font-weight:700;color:var(--teal)" id="ov-week-rev">—</div>
+                <div style="font-size:11px;color:var(--ink3)">This week</div>
+              </div>
+              <div>
+                <div style="font-size:22px;font-weight:700;color:var(--ink)" id="ov-today-rev">—</div>
+                <div style="font-size:11px;color:var(--ink3)">Today so far</div>
+              </div>
+            </div>
+            <div id="ov-stock-alert" style="font-size:11px;color:var(--ink2);border-top:1px solid var(--border);padding-top:8px"></div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -821,16 +904,20 @@ function renderOverview(){
   document.getElementById('overview-content').style.display='block';
 
   const sc=liveData.sc;
+  const sh=liveData.shopify;
+  const ad=liveData.ads;
+
+  // Header
   const today=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   document.getElementById('wh-title').textContent='Week of '+today;
-
   const sources=[];
-  if(liveData.sc)sources.push('Search Console');
-  if(liveData.ads)sources.push('Google Ads');
+  if(sc)sources.push('Search Console');
+  if(ad)sources.push('Google Ads');
   if(liveData.ga)sources.push('Analytics 4');
-  if(liveData.shopify)sources.push('Shopify');
+  if(sh)sources.push('Shopify');
   document.getElementById('wh-sub').textContent=sources.length?'Live: '+sources.join(', '):'No sources connected';
 
+  // Top 4 metrics
   if(sc){
     const clicks=sc.totalClicks||0;
     const impr=sc.totalImpressions||0;
@@ -842,7 +929,6 @@ function renderOverview(){
     document.getElementById('m-pos').textContent=pos.toFixed(1);
     document.getElementById('m-ctr').className='metric-val '+(ctr>2?'green':ctr>1.5?'amber':'red');
     document.getElementById('m-pos').className='metric-val '+(pos<10?'green':pos<15?'amber':'red');
-
     const prev=history[0];
     if(prev){
       const cDiff=prev.clicks?Math.round((clicks-prev.clicks)/prev.clicks*100):0;
@@ -852,73 +938,147 @@ function renderOverview(){
     }
   }
 
-  // Insights
-  const insights=[];
-  if(sc&&sc.lowCTR)insights.push({lbl:'Low CTR Opportunities',val:sc.lowCTR.length+' keywords',sub:'Fix meta titles for quick wins'});
-  if(sc&&sc.nearPage1)insights.push({lbl:'Nearly Page 1',val:sc.nearPage1.length+' keywords',sub:'Position 7–15, ready to push'});
-  if(liveData.shopify){
-    const sh=liveData.shopify;
-    insights.push({lbl:"Today's Revenue",val:fmtGbp(sh.todayRevenue||0),sub:(sh.todayOrders||0)+' orders today'});
-    insights.push({lbl:"This Week's Revenue",val:fmtGbp(sh.weekRevenue||0),sub:(sh.weekOrders||0)+' orders'});
-  }
-  if(liveData.ads){
-    const ad=liveData.ads;
-    insights.push({lbl:'Ad Spend (period)',val:fmtGbp(ad.totalSpend||0),sub:'£'+cfg().budget+'/month budget'});
-    if(ad.totalConv>0)insights.push({lbl:'Cost/Conversion',val:fmtGbp((ad.totalSpend||0)/(ad.totalConv||1)),sub:Math.round(ad.totalConv)+' conversions'});
-  }
-
-  document.getElementById('insights-grid').innerHTML=insights.map(i=>`
-    <div class="insight">
-      <div class="insight-lbl">${i.lbl}</div>
-      <div class="insight-val">${i.val}</div>
-      ${i.sub?`<div class="insight-sub">${i.sub}</div>`:''}
-    </div>`).join('');
-
-  // Shopify live activity
-  const sh=liveData.shopify;
-  if(sh){
-    document.getElementById('shopify-live').innerHTML=`
-      <div class="live-card">
-        <div class="live-card-title"><div class="live-dot"></div>Top Products Today</div>
-        ${(sh.topProducts||[]).slice(0,5).map(p=>`
-          <div class="live-product">
-            ${p.image?`<img src="${p.image}" alt="${p.title}" onerror="this.style.display='none'">`:'<div style="width:36px;height:36px;border-radius:6px;background:var(--teal-light);display:flex;align-items:center;justify-content:center;font-size:16px">✂</div>'}
-            <div class="live-product-name">${p.title||'Unknown'}</div>
-            <div class="live-product-count">${p.quantity||0}</div>
-          </div>`).join('')||'<div style="font-size:12px;color:var(--ink3);text-align:center;padding:12px">No orders today yet</div>'}
-      </div>
-      <div class="live-card">
-        <div class="live-card-title"><div class="live-dot"></div>Revenue This Week</div>
-        <div style="text-align:center;padding:12px 0">
-          <div style="font-size:28px;font-weight:700;color:var(--teal)">${fmtGbp(sh.weekRevenue||0)}</div>
-          <div style="font-size:12px;color:var(--ink3);margin-top:4px">${sh.weekOrders||0} orders this week</div>
-        </div>
-        <div style="text-align:center;padding:8px 0;border-top:1px solid var(--border)">
-          <div style="font-size:20px;font-weight:700;color:var(--ink)">${fmtGbp(sh.todayRevenue||0)}</div>
-          <div style="font-size:11px;color:var(--ink3);margin-top:2px">Today so far</div>
-        </div>
-      </div>
-      <div class="live-card">
-        <div class="live-card-title"><div class="live-dot"></div>Recent Orders</div>
-        ${(sh.recentOrders||[]).slice(0,4).map(o=>`
-          <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px">
-            <div>
-              <div style="font-weight:600;color:var(--ink)">#${o.number||''}</div>
-              <div style="color:var(--ink3)">${o.customer||'Guest'}</div>
-            </div>
-            <div style="text-align:right">
-              <div style="font-weight:700;color:var(--teal)">${fmtGbp(o.total||0)}</div>
-              <div style="color:var(--ink3)">${o.status||''}</div>
-            </div>
-          </div>`).join('')||'<div style="font-size:12px;color:var(--ink3);text-align:center;padding:12px">No recent orders</div>'}
+  // ── TOP SELLERS: this week vs last week ──
+  const sellersEl=document.getElementById('ov-top-sellers');
+  if(liveData.compare&&liveData.compare.comparison){
+    const rows=liveData.compare.comparison.slice(0,6);
+    sellersEl.innerHTML=rows.map(p=>{
+      const trendHtml=p.trend==='up'?`<span style="color:var(--teal);font-weight:700">↑ +${p.diff}</span>`:
+        p.trend==='down'?`<span style="color:var(--red);font-weight:700">↓ ${p.diff}</span>`:
+        p.trend==='new'?`<span style="color:var(--blue);font-weight:700">↑ NEW</span>`:
+        `<span style="color:var(--ink3)">→ same</span>`;
+      return`<div style="display:flex;align-items:center;gap:10px;padding:7px 16px;border-bottom:1px solid var(--border)">
+        <div style="width:28px;height:28px;border-radius:6px;background:var(--teal-light);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px">✂</div>
+        <div style="flex:1;min-width:0;font-size:12px;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${p.title}</div>
+        <div style="font-size:13px;font-weight:700;color:var(--teal);flex-shrink:0">${p.quantity}</div>
+        <div style="font-size:11px;color:var(--ink3);flex-shrink:0;width:28px;text-align:right">${p.lastQty||0}</div>
+        <div style="font-size:11px;flex-shrink:0;min-width:52px;text-align:right">${trendHtml}</div>
+        <div style="font-size:11px;color:var(--ink3);flex-shrink:0">${fmtGbp(p.revenue||0)}</div>
       </div>`;
+    }).join('');
+  } else if(sh&&sh.topProducts){
+    sellersEl.innerHTML=sh.topProducts.slice(0,6).map(p=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:7px 16px;border-bottom:1px solid var(--border)">
+        ${p.image?`<img src="${p.image}" style="width:28px;height:28px;border-radius:6px;object-fit:cover" onerror="this.style.display='none'">`:'<div style="width:28px;height:28px;border-radius:6px;background:var(--teal-light);display:flex;align-items:center;justify-content:center;font-size:14px">✂</div>'}
+        <div style="flex:1;min-width:0;font-size:12px;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${p.title}</div>
+        <div style="font-size:13px;font-weight:700;color:var(--teal)">${p.quantity}</div>
+        <div style="font-size:11px;color:var(--ink3)">${fmtGbp(p.revenue||0)}</div>
+      </div>`).join('');
   } else {
-    document.getElementById('shopify-live').innerHTML='<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--ink3);font-size:13px">Add Shopify token in ⚙ Settings to see live sales</div>';
+    sellersEl.innerHTML='<div style="padding:16px;text-align:center;color:var(--ink3);font-size:12px">Connect Shopify in Settings to see top sellers</div>';
+  }
+
+  // ── KEYWORD OPPORTUNITIES ──
+  const kwEl=document.getElementById('ov-keywords');
+  const kwBadge=document.getElementById('ov-kw-badge');
+  if(sc&&sc.lowCTR&&sc.lowCTR.length){
+    const total=(sc.lowCTR||[]).length+(sc.nearPage1||[]).length;
+    kwBadge.textContent=total+' TO FIX';
+    // Show top 3 low CTR + top 2 near page 1
+    const lowCTR=(sc.lowCTR||[]).slice(0,3);
+    const near=(sc.nearPage1||[]).slice(0,2);
+    kwEl.innerHTML=[
+      ...lowCTR.map(r=>{
+        const ctr=(r.ctr||0).toFixed(2)+'%';
+        const ctrCls=r.ctr<1?'var(--red)':r.ctr<2?'var(--yellow2)':'var(--teal)';
+        return`<div style="display:flex;align-items:center;gap:8px;padding:7px 16px;border-bottom:1px solid var(--border)">
+          <div style="flex:1;font-size:12px;font-weight:600;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${r.query||r.q}</div>
+          <div style="font-size:11px;color:var(--ink3);flex-shrink:0">${fmtNum(r.impressions||r.impr||0)} impr</div>
+          <div style="font-size:11px;font-weight:700;color:${ctrCls};flex-shrink:0;min-width:38px;text-align:right">${ctr}</div>
+          <button onclick="openStudio('${(r.query||r.q||'').replace(/'/g,"\\'")}');event.stopPropagation()" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0">Fix meta →</button>
+        </div>`;
+      }),
+      ...near.map(r=>`
+        <div style="display:flex;align-items:center;gap:8px;padding:7px 16px;border-bottom:1px solid var(--border)">
+          <div style="flex:1;font-size:12px;font-weight:600;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${r.query||r.q}</div>
+          <div style="font-size:11px;color:var(--ink3);flex-shrink:0">${fmtNum(r.impressions||r.impr||0)} impr</div>
+          <div style="font-size:11px;font-weight:700;color:var(--yellow2);flex-shrink:0;min-width:38px;text-align:right">${(r.ctr||0).toFixed(2)}%</div>
+          <button onclick="openStudio('${(r.query||r.q||'').replace(/'/g,"\\'")}');event.stopPropagation()" style="background:var(--teal-light);color:var(--teal);border:1px solid var(--teal);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0">Write blog →</button>
+        </div>`)
+    ].join('');
+  } else {
+    kwBadge.textContent='—';
+    kwEl.innerHTML='<div style="padding:16px;text-align:center;color:var(--ink3);font-size:12px">Connecting to Search Console...</div>';
+  }
+
+  // ── CAMPAIGN DECISIONS ──
+  const campEl=document.getElementById('ov-campaigns');
+  const adSummEl=document.getElementById('ov-ads-summary');
+  if(ad&&ad.campaigns&&ad.campaigns.length){
+    const avgOrder=sh?(sh.weekRevenue/Math.max(sh.weekOrders,1)):30;
+    const cpa=ad.totalConv>0?(ad.totalSpend/ad.totalConv):0;
+    adSummEl.textContent=`£${(ad.totalSpend||0).toFixed(2)} total spend · ${Math.round(ad.totalConv||0)} conversions · ${cpa>0?'£'+cpa.toFixed(2)+' avg CPA':'no conv. yet'}`;
+    campEl.innerHTML=ad.campaigns.map(c=>{
+      const v=getVerdict(c,avgOrder);
+      const cpa2=c.conversions>0?(c.cost/c.conversions):0;
+      return`<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap">
+        <div style="flex:1;font-size:13px;font-weight:600;min-width:120px">${c.name}</div>
+        <div style="font-size:12px;color:var(--ink2);flex-shrink:0">£${(c.cost||0).toFixed(2)}</div>
+        <div style="font-size:11px;color:${cpa2>0&&cpa2<15?'var(--teal)':cpa2>25?'var(--red)':'var(--ink3)'};flex-shrink:0">${cpa2>0?'£'+cpa2.toFixed(2)+' CPA':'no conv.'}</div>
+        <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;flex-shrink:0;${v.cls}">${v.label}</span>
+      </div>`;
+    }).join('');
+  } else {
+    adSummEl.textContent='';
+    campEl.innerHTML='<div style="padding:14px 16px;font-size:12px;color:var(--ink3)">Upload Google Ads CSV in the 💰 Ads tab to see campaign decisions here, or wait for API access approval.</div>';
+  }
+
+  // ── ACTION PLAN (top 3 actions) ──
+  const apEl=document.getElementById('ov-action-plan');
+  if(liveData.analysis){
+    const actions=buildActions().slice(0,5);
+    apEl.innerHTML=actions.map((a,i)=>`
+      <div style="display:flex;gap:10px;padding:8px 4px;border-bottom:1px solid var(--border)">
+        <div style="width:22px;height:22px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;background:${a.priority==='crit'?'var(--red)':a.priority==='high'?'var(--yellow2)':'var(--teal)'}">${i+1}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:2px;line-height:1.3">${a.title}</div>
+          <div style="font-size:11px;color:var(--ink3)">${a.time}</div>
+        </div>
+      </div>`).join('');
+  } else {
+    const s=cfg();
+    if(!s.key){
+      apEl.innerHTML='<div style="padding:12px 4px;font-size:12px;color:var(--ink3)">Add Claude API key in ⚙ Settings to generate your weekly action plan.</div>';
+    } else {
+      apEl.innerHTML='<div style="padding:12px 4px;font-size:12px;color:var(--ink3)">Generating action plan...</div>';
+    }
+  }
+
+  // ── REVENUE TREND ──
+  const revEl=document.getElementById('ov-rev-chart');
+  if(sh){
+    document.getElementById('ov-week-rev').textContent=fmtGbp(sh.weekRevenue||0);
+    document.getElementById('ov-today-rev').textContent=fmtGbp(sh.todayRevenue||0);
+    // Draw mini bar chart from history
+    const chartData=[...history].reverse().slice(-8);
+    if(chartData.length){
+      const maxRev=Math.max(...chartData.map(h=>h.revenue||0),1);
+      revEl.innerHTML=chartData.map((h,i)=>{
+        const isNow=i===chartData.length-1;
+        const pct=Math.max(((h.revenue||0)/maxRev*100),4);
+        return`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+          <div style="width:100%;background:${isNow?'var(--teal)':'var(--teal-light)'};border-radius:3px 3px 0 0;height:${pct}%;min-height:4px;transition:height .3s"></div>
+          <div style="font-size:9px;color:var(--ink3)">${isNow?'NOW':'w'+(i+1)}</div>
+        </div>`;
+      }).join('');
+    } else {
+      revEl.innerHTML='<div style="font-size:11px;color:var(--ink3)">History builds up over time</div>';
+    }
+    // Stock alert
+    const stockEl=document.getElementById('ov-stock-alert');
+    if(liveData.compare&&liveData.compare.comparison){
+      const hot=liveData.compare.comparison.filter(p=>p.quantity>=8);
+      if(hot.length) stockEl.textContent='Stock alert: '+hot[0].title+' ('+hot[0].quantity+' sold) — check levels before Monday';
+    }
+  } else {
+    document.getElementById('ov-week-rev').textContent='—';
+    document.getElementById('ov-today-rev').textContent='—';
+    revEl.innerHTML='<div style="font-size:11px;color:var(--ink3)">Connect Shopify to see revenue</div>';
   }
 
   // Save to history
   if(sc){
-    const h={date:new Date().toLocaleDateString('en-GB'),ts:Date.now(),clicks:sc.totalClicks,impr:sc.totalImpressions,ctr:parseFloat((sc.totalClicks/Math.max(sc.totalImpressions,1)*100).toFixed(2)),pos:parseFloat((sc.avgPosition||0).toFixed(1)),revenue:liveData.shopify?.weekRevenue||0,adSpend:liveData.ads?.totalSpend||0};
+    const h={date:new Date().toLocaleDateString('en-GB'),ts:Date.now(),clicks:sc.totalClicks,impr:sc.totalImpressions,ctr:parseFloat((sc.totalClicks/Math.max(sc.totalImpressions,1)*100).toFixed(2)),pos:parseFloat((sc.avgPosition||0).toFixed(1)),revenue:sh?.weekRevenue||0,adSpend:ad?.totalSpend||0};
     if(!history[0]||history[0].date!==h.date){history.unshift(h);history=history.slice(0,52);try{localStorage.setItem('cc_intel_hist',JSON.stringify(history));}catch(e){}}
   }
 }
@@ -1204,6 +1364,20 @@ Exact title, keyword, why it will rank.
     const sm=analysis.match(/SEO SCORE[:\s]+(\d+)\/10/i);
     if(sm)document.getElementById('seo-score').textContent=sm[1]+'/10';
 
+    // Update overview action plan section
+    const ovAp=document.getElementById('ov-action-plan');
+    if(ovAp){
+      const ovActions=buildActions().slice(0,5);
+      ovAp.innerHTML=ovActions.map((a,i)=>`
+        <div style="display:flex;gap:10px;padding:8px 4px;border-bottom:1px solid var(--border)">
+          <div style="width:22px;height:22px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;background:${a.priority==='crit'?'var(--red)':a.priority==='high'?'var(--yellow2)':'var(--teal)'}">${i+1}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:2px;line-height:1.3">${a.title}</div>
+            <div style="font-size:11px;color:var(--ink3)">${a.time}</div>
+          </div>
+        </div>`).join('');
+    }
+
     // Build action items from data
     const actions=buildActions();
     document.getElementById('action-count').textContent=actions.length+' actions';
@@ -1336,7 +1510,10 @@ async function loadWeekComparison(){
     const r=await fetch('/api/shopify-compare?domain='+s.shop+'&token='+s.token);
     const d=await r.json();
     if(d.error)throw new Error(d.error);
+    liveData.compare=d;
     renderComparison(d);
+    // Re-render overview now that compare data is ready
+    renderOverview();
   }catch(e){
     document.getElementById('compare-loading').textContent='Could not load comparison: '+e.message;
   }
