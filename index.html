@@ -212,11 +212,19 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
 .week-hdr-score .val{font-size:26px;font-weight:700;color:#fff}
 .week-hdr-score .lbl{font-size:11px;color:rgba(255,255,255,.75);margin-top:2px}
 
-@media(max-width:600px){
+@media(max-width:768px){
   .metrics-row,.insights-grid,.live-grid{grid-template-columns:1fr 1fr}
-  .tab-btn span{display:none}
   .page{padding:16px 12px}
   .week-hdr{flex-direction:column}
+  .tab-bar{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch}
+  .tab-btn{min-width:80px;flex-shrink:0;font-size:11px;padding:10px 8px}
+  .tab-btn span{font-size:10px}
+}
+@media(max-width:480px){
+  .metrics-row{grid-template-columns:1fr 1fr}
+  .insights-grid,.live-grid{grid-template-columns:1fr}
+  .hdr-r .btn-ghost:not(#refreshBtn){display:none}
+  .tab-btn{min-width:70px;padding:8px 6px}
 }
 </style>
 </head>
@@ -605,6 +613,11 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
     <div class="form-grp">
       <label class="form-lbl">GA4 Property ID</label>
       <input class="form-inp" type="text" id="s-ga4" value="403507004">
+    </div>
+    <div class="form-grp">
+      <label class="form-lbl">Google Places API Key</label>
+      <input class="form-inp" type="password" id="s-places-key" placeholder="AIza...">
+      <div class="form-hint">For Competitors tab — local map pack tracking. ~£0.78/month. Add GOOGLE_PLACES_API_KEY to Vercel env vars.</div>
     </div>
     <div class="form-grp">
       <label class="form-lbl">Google Ads Customer ID</label>
