@@ -2301,33 +2301,63 @@ function studioSugTab(tab, btn) {
   if(kwMatches) kwMatches.style.display = 'none';
 
   if(tab === 'sellers') {
-    // Top selling products from Shopify this week
+    // Top selling products scored by SEO opportunity
     const sellers = liveData.compare?.comparison?.length
-      ? liveData.compare.comparison.slice(0,9)
-      : (liveData.shopify?.topProducts || studioProds).slice(0,9);
+      ? liveData.compare.comparison.slice(0,12)
+      : (liveData.shopify?.topProducts || studioProds).slice(0,12);
+
+    const sc = liveData.sc;
+    const allKeywords = [...(sc?.lowCTR||[]), ...(sc?.nearPage1||[])];
+
+    // Score each seller by SEO opportunity
+    const scored = sellers.map(p => {
+      const titleWords = (p.title||'').toLowerCase().split(/[\s,&-]+/).filter(w=>w.length>3);
+      let bestImpr = 0, bestCTR = 0, bestPos = 99, matchedKw = '';
+      allKeywords.forEach(kw => {
+        const q = (kw.query||kw.q||'').toLowerCase();
+        if(titleWords.some(w=>q.includes(w)||w.includes(q.split(' ')[0]))) {
+          const impr = kw.impressions||kw.impr||0;
+          if(impr > bestImpr) { bestImpr=impr; bestCTR=kw.ctr||0; bestPos=kw.position||kw.pos||99; matchedKw=kw.query||kw.q||''; }
+        }
+      });
+      let badge='', badgeColor='', reason='';
+      if(bestImpr>300 && bestCTR<2) { badge='🔥 HIGH ROI'; badgeColor='#e17055'; reason=`${bestImpr.toLocaleString()} impressions · ${bestCTR.toFixed(1)}% CTR`; }
+      else if(bestPos>5&&bestPos<=15&&bestImpr>100) { badge='⬆ NEAR P1'; badgeColor='var(--blue)'; reason=`pos ${bestPos.toFixed(0)} · ${bestImpr.toLocaleString()} impr`; }
+      else if(p.trend==='new') { badge='★ NEW'; badgeColor='var(--blue)'; reason='First appearance this week'; }
+      else if(p.trend==='up') { badge=`↑ +${p.diff||0}`; badgeColor='var(--teal)'; reason='Trending up this week'; }
+      return { ...p, badge, badgeColor, reason, matchedKw, bestImpr, bestCTR, bestPos,
+        seoScore: bestImpr>300&&bestCTR<2 ? 100+bestImpr/10 : bestPos<=15&&bestImpr>100 ? 80 : 10 };
+    }).sort((a,b)=>b.seoScore-a.seoScore);
+
     g.innerHTML = '';
-    if(!sellers.length) {
+    if(!scored.length) {
       g.innerHTML = '<div style="text-align:center;padding:24px;color:var(--ink3);font-size:13px;background:var(--card);border-radius:var(--r2)">Connect Shopify in Settings to see top sellers</div>';
       return;
     }
-    g.style.display = 'grid';
-    g.style.gridTemplateColumns = 'repeat(3,1fr)';
-    g.style.gap = '10px';
-    sellers.forEach(p => {
+    g.style.display = 'flex';
+    g.style.flexDirection = 'column';
+    g.style.gap = '8px';
+    scored.forEach((p, i) => {
       const qty = p.quantity || p.qty || 0;
-      const trend = p.trend === 'up' ? `<span style="color:var(--teal);font-size:10px;font-weight:700">↑ ${p.diff||''}</span>` :
-                    p.trend === 'new' ? `<span style="color:var(--blue);font-size:10px;font-weight:700">★ NEW</span>` :
-                    p.trend === 'down' ? `<span style="color:var(--red);font-size:10px;font-weight:700">↓ ${Math.abs(p.diff||0)}</span>` : '';
       const card = document.createElement('div');
       card.className = 'studio-sug-card'; card.dataset.sid = p.id;
-      card.innerHTML = (p.image ? `<img src="${p.image}" style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">` : `<div style="width:44px;height:44px;border-radius:8px;background:var(--teal-light);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px">✂</div>`) +
+      card.style.cssText = `display:flex;align-items:center;gap:10px;background:var(--card);border:2px solid ${p.seoScore>=100?'#e17055':p.seoScore>=80?'var(--blue)':'var(--border2)'};border-radius:var(--r2);padding:10px 12px;cursor:pointer;transition:all .15s`;
+      card.innerHTML =
+        `<div style="width:24px;height:24px;border-radius:50%;background:${p.seoScore>=100?'#e17055':p.seoScore>=80?'var(--blue)':'var(--border2)'};color:${p.seoScore>=80?'#fff':'var(--ink3)'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">${i+1}</div>` +
+        (p.image?`<img src="${p.image}" style="width:40px;height:40px;border-radius:8px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">`:
+          `<div style="width:40px;height:40px;border-radius:8px;background:var(--teal-light);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px">✂</div>`) +
         `<div style="flex:1;min-width:0">
-          <div style="font-size:12px;font-weight:600;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${p.title||''}</div>
-          <div style="display:flex;align-items:center;gap:6px;margin-top:3px">
-            <span style="font-size:10px;font-weight:700;background:var(--teal-light);color:var(--teal);border-radius:20px;padding:1px 8px">${qty} sold</span>
-            ${trend}
+          <div style="font-size:12px;font-weight:700;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical">${p.title||''}</div>
+          <div style="display:flex;align-items:center;gap:5px;margin-top:3px;flex-wrap:wrap">
+            <span style="font-size:10px;font-weight:700;background:var(--teal-light);color:var(--teal);border-radius:20px;padding:1px 7px">${qty} sold</span>
+            ${p.badge?`<span style="font-size:10px;font-weight:700;color:#fff;background:${p.badgeColor};border-radius:20px;padding:1px 7px">${p.badge}</span>`:''}
           </div>
-        </div>`;
+          ${p.reason?`<div style="font-size:10px;color:var(--ink3);margin-top:2px">${p.reason}</div>`:''}
+          ${p.matchedKw?`<div style="font-size:10px;color:var(--ink3)">Keyword: "${p.matchedKw}"</div>`:''}
+        </div>` +
+        `<div style="font-size:18px;color:var(--ink3);flex-shrink:0">›</div>`;
+      card.onmouseover = () => { card.style.background='var(--teal-light)'; card.style.borderColor='var(--teal)'; };
+      card.onmouseout = () => { card.style.background='var(--card)'; card.style.borderColor=p.seoScore>=100?'#e17055':p.seoScore>=80?'var(--blue)':'var(--border2)'; };
       card.onclick = () => studioSelectProd(p);
       g.appendChild(card);
     });
@@ -2539,36 +2569,141 @@ async function studioLoadCollections() {
     document.getElementById('sc-collections-grid').innerHTML = '<div style="text-align:center;padding:24px;color:var(--ink3);font-size:13px;background:var(--card);border-radius:var(--r2)">Add Shopify token in ⚙ Settings to load collections</div>';
     return;
   }
-  document.getElementById('sc-collections-grid').innerHTML = '<div style="text-align:center;padding:24px;color:var(--ink3)"><div class="spin" style="margin:0 auto 10px;width:28px;height:28px;border-width:3px"></div>Loading collections…</div>';
+  document.getElementById('sc-collections-grid').innerHTML = '<div style="text-align:center;padding:24px;color:var(--ink3)"><div class="spin" style="margin:0 auto 10px;width:28px;height:28px;border-width:3px"></div>Loading collections + Google data…</div>';
   try {
     const r = await fetch(`/api/shopify?domain=${s.shop}&token=${s.token}&endpoint=collections&limit=250`);
     const d = await r.json();
+    if(d.error) throw new Error(d.error);
     studioColls = [...(d.custom_collections||[]), ...(d.smart_collections||[])].map(c=>({
       id: c.id, title: c.title, handle: c.handle, count: c.products_count||0
     }));
+
+    // Score every collection using Google Search Console data
+    const sc = liveData.sc;
+    const allKeywords = [...(sc?.lowCTR||[]), ...(sc?.nearPage1||[]), ...(sc?.topKeywords||[])];
+
+    studioColls = studioColls.map(c => {
+      const titleWords = c.title.toLowerCase().split(/[\s,&-]+/).filter(w=>w.length>2);
+      let bestImpressions = 0, bestCTR = 0, bestPosition = 99, matchedKeyword = '';
+
+      allKeywords.forEach(kw => {
+        const q = (kw.query||kw.q||'').toLowerCase();
+        const match = titleWords.some(w => q.includes(w) || w.includes(q.split(' ')[0]));
+        if(match) {
+          const impr = kw.impressions||kw.impr||0;
+          const pos = kw.position||kw.pos||99;
+          const ctr = kw.ctr||0;
+          if(impr > bestImpressions) { bestImpressions = impr; bestCTR = ctr; bestPosition = pos; matchedKeyword = kw.query||kw.q||''; }
+        }
+      });
+
+      // Priority score: high impressions low CTR = highest ROI
+      let priority = 0;
+      let priorityLabel = '';
+      let priorityColor = '';
+      let priorityReason = '';
+
+      if(bestImpressions > 500 && bestCTR < 2) {
+        priority = 100 + bestImpressions/10;
+        priorityLabel = '🔥 HIGH ROI';
+        priorityColor = '#e17055';
+        priorityReason = `${bestImpressions.toLocaleString()} impressions · only ${bestCTR.toFixed(1)}% CTR — better meta title could 3-5× clicks`;
+      } else if(bestPosition > 5 && bestPosition <= 15 && bestImpressions > 100) {
+        priority = 80 + (15-bestPosition)*5;
+        priorityLabel = '⬆ NEAR PAGE 1';
+        priorityColor = 'var(--blue)';
+        priorityReason = `Position ${bestPosition.toFixed(0)} · ${bestImpressions.toLocaleString()} impressions — SEO push could reach top 5`;
+      } else if(bestImpressions > 200) {
+        priority = 50 + bestImpressions/100;
+        priorityLabel = '📈 HAS TRAFFIC';
+        priorityColor = 'var(--teal)';
+        priorityReason = `${bestImpressions.toLocaleString()} impressions from "${matchedKeyword}"`;
+      } else if(c.count > 20) {
+        priority = 20;
+        priorityLabel = '📦 LARGE';
+        priorityColor = 'var(--ink3)';
+        priorityReason = `${c.count} products — worth optimising`;
+      } else {
+        priority = 5;
+        priorityLabel = '';
+        priorityColor = 'var(--ink3)';
+        priorityReason = '';
+      }
+
+      return { ...c, priority, priorityLabel, priorityColor, priorityReason, matchedKeyword, bestImpressions, bestCTR, bestPosition };
+    });
+
+    // Sort by priority score descending
+    studioColls.sort((a,b) => b.priority - a.priority);
+
     studioRenderCollections();
   } catch(e) {
-    document.getElementById('sc-collections-grid').innerHTML = `<div style="text-align:center;padding:24px;color:var(--red);font-size:13px">Error: ${e.message}</div>`;
+    document.getElementById('sc-collections-grid').innerHTML = `<div style="text-align:center;padding:24px;color:var(--red);font-size:13px;background:var(--card);border-radius:var(--r2)">Error: ${e.message}</div>`;
   }
 }
 
 function studioRenderCollections(filter='') {
   const grid = document.getElementById('sc-collections-grid');
   if(!grid) return;
-  const filtered = filter ? studioColls.filter(c=>c.title.toLowerCase().includes(filter.toLowerCase())) : studioColls;
+  const filtered = filter
+    ? studioColls.filter(c=>c.title.toLowerCase().includes(filter.toLowerCase()))
+    : studioColls;
   const done = studioCollsDone;
+
+  const topROI = filtered.filter(c=>c.priority>=100).length;
+  const nearP1 = filtered.filter(c=>c.priority>=80&&c.priority<100).length;
+
   grid.innerHTML = `
-    <div style="margin-bottom:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <input type="text" placeholder="Filter collections…" oninput="studioRenderCollections(this.value)" style="flex:1;min-width:160px;padding:8px 12px;border:2px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:inherit;outline:none;background:var(--bg);color:var(--ink)" onfocus="this.style.borderColor='var(--teal)'" onblur="this.style.borderColor='var(--border2)'">
-      <span style="font-size:11px;color:var(--ink3)">${done.size}/${studioColls.length} written</span>
+    <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input type="text" placeholder="Filter collections…" oninput="studioRenderCollections(this.value)"
+        style="flex:1;min-width:160px;padding:8px 12px;border:2px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:inherit;outline:none;background:var(--bg);color:var(--ink)"
+        onfocus="this.style.borderColor='var(--teal)'" onblur="this.style.borderColor='var(--border2)'" value="${filter}">
+      <span style="font-size:11px;color:var(--ink3)">${done.size}/${studioColls.length} done</span>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;max-height:320px;overflow-y:auto">
-      ${filtered.map(c => {
+
+    ${!filter ? `<div style="background:var(--card);border-radius:var(--r);padding:10px 14px;margin-bottom:12px;border-left:3px solid var(--teal);font-size:12px;color:var(--ink2)">
+      <strong style="color:var(--ink)">Ranked by Google opportunity</strong> — ${topROI} high-ROI collections (high impressions, low CTR) · ${nearP1} near page 1.
+      Fix the top ones first for the fastest traffic gains.
+    </div>` : ''}
+
+    <div style="display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto">
+      ${filtered.map((c, i) => {
         const isDone = done.has(String(c.id));
-        return `<div onclick="studioSelectCollection('${c.id}','${c.title.replace(/'/g,"\\'")}','${c.handle||''}')" style="background:var(--card);border:2px solid ${isDone?'var(--teal)':'var(--border2)'};border-radius:var(--r);padding:12px;cursor:pointer;transition:all .15s;position:relative" onmouseover="this.style.borderColor='var(--teal)'" onmouseout="this.style.borderColor='${isDone?'var(--teal)':'var(--border2)'}'">
-          ${isDone?`<span style="position:absolute;top:6px;right:6px;font-size:10px;font-weight:700;background:var(--teal);color:#fff;border-radius:20px;padding:1px 6px">✓ Done</span>`:''}
-          <div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.3;padding-right:${isDone?'40px':'0'}">${c.title}</div>
-          <div style="font-size:11px;color:var(--ink3);margin-top:3px">${c.count} products · ${isDone?'<span style="color:var(--teal)">SEO written</span>':'<span style="color:var(--yellow2)">needs content</span>'}</div>
+        const isTopPriority = c.priority >= 100;
+        const borderColor = isDone ? 'var(--teal)' : isTopPriority ? '#e17055' : c.priority>=80 ? 'var(--blue)' : 'var(--border2)';
+
+        return `<div onclick="studioSelectCollection('${c.id}','${c.title.replace(/'/g,"\\'")}','${c.handle||''}')"
+          style="background:var(--card);border:2px solid ${borderColor};border-radius:var(--r);padding:12px 14px;cursor:pointer;transition:all .15s;position:relative;display:flex;align-items:center;gap:12px"
+          onmouseover="this.style.background='var(--teal-light)';this.style.borderColor='var(--teal)'"
+          onmouseout="this.style.background='var(--card)';this.style.borderColor='${borderColor}'">
+
+          <!-- Rank number -->
+          <div style="width:28px;height:28px;border-radius:50%;background:${isDone?'var(--teal)':isTopPriority?'#e17055':c.priority>=80?'var(--blue)':'var(--border2)'};color:${isDone||isTopPriority||c.priority>=80?'#fff':'var(--ink3)'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">
+            ${isDone?'✓':i+1}
+          </div>
+
+          <!-- Content -->
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <div style="font-size:13px;font-weight:700;color:var(--ink)">${c.title}</div>
+              ${c.priorityLabel ? `<span style="font-size:10px;font-weight:700;color:#fff;background:${c.priorityColor};border-radius:20px;padding:2px 8px;white-space:nowrap">${c.priorityLabel}</span>` : ''}
+              ${isDone ? `<span style="font-size:10px;font-weight:700;background:var(--teal);color:#fff;border-radius:20px;padding:2px 8px">✓ Done</span>` : ''}
+            </div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:3px">
+              ${c.count} products
+              ${c.priorityReason ? `· <span style="color:${c.priorityColor}">${c.priorityReason}</span>` : ''}
+            </div>
+            ${c.matchedKeyword ? `<div style="font-size:10px;color:var(--ink3);margin-top:2px">Google keyword: "${c.matchedKeyword}"</div>` : ''}
+          </div>
+
+          <!-- Stats -->
+          ${c.bestImpressions > 0 ? `<div style="text-align:right;flex-shrink:0">
+            <div style="font-size:13px;font-weight:700;color:var(--ink)">${c.bestImpressions.toLocaleString()}</div>
+            <div style="font-size:10px;color:var(--ink3)">impressions</div>
+            <div style="font-size:11px;font-weight:700;color:${c.bestCTR<2?'var(--red)':'var(--teal)'};margin-top:2px">${c.bestCTR.toFixed(1)}% CTR</div>
+          </div>` : ''}
+
+          <div style="font-size:18px;color:var(--ink3);flex-shrink:0">›</div>
         </div>`;
       }).join('')}
     </div>`;
@@ -2905,55 +3040,168 @@ function studioDownloadImg(b64, filename) {
 
 // ── PUSH SEO TO SHOPIFY ───────────────────────────────────────────────────────
 function studioPushToShopifyBtn(type, id, name, metaTitle, metaDesc, bodyHtml) {
-  if(!id) return '';
-  const safeTitle = (metaTitle||'').replace(/'/g,"\\'").replace(/\n/g,' ');
-  const safeDesc = (metaDesc||'').replace(/'/g,"\\'").replace(/\n/g,' ');
-  const safeBody = bodyHtml ? (bodyHtml).replace(/'/g,"\\'").substring(0,50)+'...' : '';
+  if(!id || id==='undefined' || id==='null') return '';
+  // Store data on window so the modal can access full strings safely
+  const key = 'seopush_'+Date.now();
+  window[key] = { type, id, name, metaTitle: metaTitle||'', metaDesc: metaDesc||'', bodyHtml: bodyHtml||'' };
   return `<div style="background:linear-gradient(135deg,#00B894,#00A381);border-radius:var(--r2);padding:16px 18px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
     <div>
       <div style="font-size:14px;font-weight:700;color:#fff">🚀 Push SEO directly to Shopify</div>
-      <div style="font-size:12px;color:rgba(255,255,255,.8);margin-top:3px">${name} · Meta title + description${bodyHtml?' + page description':''}</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.8);margin-top:3px">${name} — click to review current vs new before saving</div>
     </div>
-    <button onclick="studioPushSEO('${type}','${id}','${safeTitle}','${safeDesc}',${bodyHtml?`'${safeBody}'`:'null'})" style="background:#fff;color:var(--teal);border:none;border-radius:var(--r);padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
-      ✓ Yes — Update Shopify Now
+    <button onclick="studioPushSEOModal('${key}')" style="background:#fff;color:var(--teal);border:none;border-radius:var(--r);padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap" id="pushbtn-${key}">
+      Review &amp; Push to Shopify →
     </button>
   </div>`;
 }
 
-async function studioPushSEO(type, id, metaTitle, metaDesc, bodyHtml) {
+async function studioPushSEOModal(key) {
+  const d = window[key];
+  if(!d) { toast('Session expired — regenerate content','error'); return; }
   const s = cfg();
-  if(!s.token||!s.shop) { toast('Add Shopify token in ⚙ Settings','error'); return; }
-  if(!id||id==='undefined'||id==='null') { toast('No product/collection ID — generate content from the list first','error'); return; }
+  if(!s.token||!s.shop) { toast('Add Shopify token in ⚙ Settings','error'); openSettings(); return; }
 
-  // Show confirmation dialog
-  const confirmed = confirm(`Push these SEO changes to Shopify?\n\nMeta Title: ${metaTitle}\n\nMeta Description: ${metaDesc}\n\nThis will update your live Shopify store immediately.`);
-  if(!confirmed) return;
+  const btn = document.getElementById('pushbtn-'+key);
+  if(btn) { btn.textContent = 'Loading current…'; btn.disabled = true; }
 
-  toast('Pushing to Shopify…');
+  // Fetch current SEO from Shopify first
+  let current = { seoTitle:'', seoDescription:'' };
+  try {
+    const r = await fetch(`/api/shopify-seo?domain=${s.shop}&token=${s.token}&type=${d.type}&id=${d.id}`);
+    if(r.ok) current = await r.json();
+  } catch(e) {}
+
+  if(btn) { btn.textContent = 'Review & Push to Shopify →'; btn.disabled = false; }
+
+  // Build comparison modal
+  const hasExisting = !!(current.seoTitle || current.seoDescription);
+  const modal = document.createElement('div');
+  modal.id = 'seo-push-modal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML = `
+    <div style="background:var(--card);border-radius:var(--r3);box-shadow:0 8px 40px rgba(0,0,0,.25);width:100%;max-width:620px;max-height:90vh;overflow-y:auto">
+      <div style="padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:16px;font-weight:700">🚀 Review SEO Changes</div>
+          <div style="font-size:12px;color:var(--ink3);margin-top:2px">${d.name}</div>
+        </div>
+        <button onclick="document.getElementById('seo-push-modal').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--ink3);padding:4px 8px">✕</button>
+      </div>
+      <div style="padding:20px 24px">
+
+        ${hasExisting ? `<div style="background:var(--yellow-bg);border:1px solid var(--yellow2);border-radius:var(--r);padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--ink2)">
+          ⚠ This ${d.type} already has SEO data. Review carefully before overwriting.
+        </div>` : `<div style="background:var(--teal-light);border:1px solid var(--teal);border-radius:var(--r);padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--teal)">
+          ✓ No existing SEO data — safe to add new content.
+        </div>`}
+
+        <!-- Meta Title -->
+        <div style="margin-bottom:16px">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);margin-bottom:8px">Meta Title</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <div style="font-size:10px;font-weight:700;color:var(--ink3);margin-bottom:4px">CURRENT IN SHOPIFY</div>
+              <div style="background:var(--card2);border:1.5px solid var(--border2);border-radius:var(--r);padding:10px;font-size:12px;color:${current.seoTitle?'var(--ink)':'var(--ink3)'};min-height:42px">${current.seoTitle || '<em>None set</em>'}</div>
+              ${current.seoTitle?`<div style="font-size:10px;color:var(--ink3);margin-top:3px">${current.seoTitle.length} chars</div>`:''}
+            </div>
+            <div>
+              <div style="font-size:10px;font-weight:700;color:var(--teal);margin-bottom:4px">NEW (AI GENERATED)</div>
+              <textarea id="spm-title" style="width:100%;background:var(--teal-light);border:1.5px solid var(--teal);border-radius:var(--r);padding:10px;font-size:12px;font-family:inherit;color:var(--ink);resize:vertical;min-height:42px;outline:none">${d.metaTitle}</textarea>
+              <div id="spm-title-len" style="font-size:10px;color:var(--teal);margin-top:3px">${d.metaTitle.length}/60 chars</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Meta Description -->
+        <div style="margin-bottom:16px">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);margin-bottom:8px">Meta Description</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <div style="font-size:10px;font-weight:700;color:var(--ink3);margin-bottom:4px">CURRENT IN SHOPIFY</div>
+              <div style="background:var(--card2);border:1.5px solid var(--border2);border-radius:var(--r);padding:10px;font-size:12px;color:${current.seoDescription?'var(--ink)':'var(--ink3)'};min-height:60px">${current.seoDescription || '<em>None set</em>'}</div>
+              ${current.seoDescription?`<div style="font-size:10px;color:var(--ink3);margin-top:3px">${current.seoDescription.length} chars</div>`:''}
+            </div>
+            <div>
+              <div style="font-size:10px;font-weight:700;color:var(--teal);margin-bottom:4px">NEW (AI GENERATED)</div>
+              <textarea id="spm-desc" style="width:100%;background:var(--teal-light);border:1.5px solid var(--teal);border-radius:var(--r);padding:10px;font-size:12px;font-family:inherit;color:var(--ink);resize:vertical;min-height:60px;outline:none">${d.metaDesc}</textarea>
+              <div id="spm-desc-len" style="font-size:10px;color:var(--teal);margin-top:3px">${d.metaDesc.length}/155 chars</div>
+            </div>
+          </div>
+        </div>
+
+        ${d.bodyHtml ? `
+        <div style="margin-bottom:16px">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600">
+            <input type="checkbox" id="spm-body-check" checked style="width:16px;height:16px;accent-color:var(--teal)">
+            Also update collection page description (SEO body text)
+          </label>
+        </div>` : ''}
+
+        <div style="display:flex;gap:10px;margin-top:4px">
+          <button onclick="document.getElementById('seo-push-modal').remove()" style="flex:1;background:var(--card2);color:var(--ink2);border:1.5px solid var(--border2);border-radius:var(--r);padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Cancel</button>
+          <button onclick="studioPushSEOConfirm('${key}')" id="spm-confirm-btn" style="flex:2;background:var(--teal);color:#fff;border:none;border-radius:var(--r);padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">
+            ✓ ${hasExisting?'Overwrite':'Save'} to Shopify Now
+          </button>
+        </div>
+        <div style="font-size:11px;color:var(--ink3);text-align:center;margin-top:10px">You can edit the AI-generated text before saving</div>
+      </div>
+    </div>`;
+
+  document.body.appendChild(modal);
+
+  // Live char counters
+  document.getElementById('spm-title').addEventListener('input', function() {
+    document.getElementById('spm-title-len').textContent = this.value.length+'/60 chars';
+    document.getElementById('spm-title-len').style.color = this.value.length > 60 ? 'var(--red)' : 'var(--teal)';
+  });
+  document.getElementById('spm-desc').addEventListener('input', function() {
+    document.getElementById('spm-desc-len').textContent = this.value.length+'/155 chars';
+    document.getElementById('spm-desc-len').style.color = this.value.length > 155 ? 'var(--red)' : 'var(--teal)';
+  });
+}
+
+async function studioPushSEOConfirm(key) {
+  const d = window[key];
+  if(!d) return;
+  const s = cfg();
+
+  const newTitle = document.getElementById('spm-title')?.value?.trim() || d.metaTitle;
+  const newDesc = document.getElementById('spm-desc')?.value?.trim() || d.metaDesc;
+  const includeBody = document.getElementById('spm-body-check')?.checked;
+
+  const confirmBtn = document.getElementById('spm-confirm-btn');
+  if(confirmBtn) { confirmBtn.textContent = 'Saving to Shopify…'; confirmBtn.disabled = true; }
 
   try {
-    const body = { domain: s.shop, token: s.token, type, id, seoTitle: metaTitle, seoDescription: metaDesc };
-    if(bodyHtml && bodyHtml !== 'null') body.bodyHtml = bodyHtml;
+    const body = { domain: s.shop, token: s.token, type: d.type, id: d.id, seoTitle: newTitle, seoDescription: newDesc };
+    if(includeBody && d.bodyHtml) body.bodyHtml = d.bodyHtml;
 
     const r = await fetch('/api/shopify-seo', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
-    const d = await r.json();
-    if(d.error) throw new Error(d.error);
+    const result = await r.json();
+    if(result.error) throw new Error(result.error);
 
-    toast(`✓ Shopify updated — ${d.updated?.length||0} fields saved`, 'success');
+    document.getElementById('seo-push-modal')?.remove();
+    toast(`✓ Shopify updated — ${result.updated?.length||0} fields saved live`, 'success');
 
-    // Update any push button to show success
-    document.querySelectorAll('[onclick*="studioPushSEO"]').forEach(btn => {
-      btn.textContent = '✓ Updated in Shopify!';
-      btn.style.background = 'var(--teal-light)';
-      btn.style.color = 'var(--teal)';
-      btn.disabled = true;
-    });
+    // Update the push button to show done
+    const pushBtn = document.getElementById('pushbtn-'+key);
+    if(pushBtn) {
+      pushBtn.textContent = '✓ Live in Shopify!';
+      pushBtn.style.background = 'rgba(255,255,255,.2)';
+      pushBtn.style.color = '#fff';
+      pushBtn.disabled = true;
+    }
   } catch(e) {
+    if(confirmBtn) { confirmBtn.textContent = '✓ Save to Shopify Now'; confirmBtn.disabled = false; }
     toast('Push failed: '+e.message, 'error');
+    // Show helpful message for scope error
+    if(e.message.includes('write_products')) {
+      alert('Your Shopify token needs write_products scope.\n\nGo to:\nShopify Admin → Settings → Apps → Develop apps → your app → Configuration → add write_products and write_content scopes → Save → rotate the token.\n\nThen update your token in ⚙ Settings.');
+    }
   }
 }
 
