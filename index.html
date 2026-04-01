@@ -2657,6 +2657,7 @@ async function studioGenProduct() {
 
     document.getElementById('studio-prod-results').innerHTML=
       imgSection+
+      studioPushToShopifyBtn('product', p.id, p.title, c.blog_meta_title, c.blog_meta_description, null)+
       studioResultSec('📝 Blog Post',[
         {label:'① Meta Title',content:c.blog_meta_title,badge:(c.blog_meta_title||'').length+'/60'},
         {label:'② Meta Description',content:c.blog_meta_description,badge:(c.blog_meta_description||'').length+'/155'},
@@ -2760,6 +2761,7 @@ async function studioGenCollection() {
       if(studioColls.length) studioRenderCollections();
     }
     document.getElementById('sc-results').innerHTML=
+      studioPushToShopifyBtn('collection', window._studioSelectedCollId, name, c.collection_meta_title, c.collection_meta_description, c.collection_seo_description)+
       studioResultSec(`📦 ${name} — SEO Content`,[
         {label:'Meta Title',content:c.collection_meta_title,badge:(c.collection_meta_title||'').length+'/60'},
         {label:'Meta Description',content:c.collection_meta_description,badge:(c.collection_meta_description||'').length+'/155'},
@@ -2899,6 +2901,60 @@ function studioDownloadImg(b64, filename) {
   a.download = filename;
   a.click();
   toast('Downloaded: '+filename,'success');
+}
+
+// ── PUSH SEO TO SHOPIFY ───────────────────────────────────────────────────────
+function studioPushToShopifyBtn(type, id, name, metaTitle, metaDesc, bodyHtml) {
+  if(!id) return '';
+  const safeTitle = (metaTitle||'').replace(/'/g,"\\'").replace(/\n/g,' ');
+  const safeDesc = (metaDesc||'').replace(/'/g,"\\'").replace(/\n/g,' ');
+  const safeBody = bodyHtml ? (bodyHtml).replace(/'/g,"\\'").substring(0,50)+'...' : '';
+  return `<div style="background:linear-gradient(135deg,#00B894,#00A381);border-radius:var(--r2);padding:16px 18px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+    <div>
+      <div style="font-size:14px;font-weight:700;color:#fff">🚀 Push SEO directly to Shopify</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.8);margin-top:3px">${name} · Meta title + description${bodyHtml?' + page description':''}</div>
+    </div>
+    <button onclick="studioPushSEO('${type}','${id}','${safeTitle}','${safeDesc}',${bodyHtml?`'${safeBody}'`:'null'})" style="background:#fff;color:var(--teal);border:none;border-radius:var(--r);padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
+      ✓ Yes — Update Shopify Now
+    </button>
+  </div>`;
+}
+
+async function studioPushSEO(type, id, metaTitle, metaDesc, bodyHtml) {
+  const s = cfg();
+  if(!s.token||!s.shop) { toast('Add Shopify token in ⚙ Settings','error'); return; }
+  if(!id||id==='undefined'||id==='null') { toast('No product/collection ID — generate content from the list first','error'); return; }
+
+  // Show confirmation dialog
+  const confirmed = confirm(`Push these SEO changes to Shopify?\n\nMeta Title: ${metaTitle}\n\nMeta Description: ${metaDesc}\n\nThis will update your live Shopify store immediately.`);
+  if(!confirmed) return;
+
+  toast('Pushing to Shopify…');
+
+  try {
+    const body = { domain: s.shop, token: s.token, type, id, seoTitle: metaTitle, seoDescription: metaDesc };
+    if(bodyHtml && bodyHtml !== 'null') body.bodyHtml = bodyHtml;
+
+    const r = await fetch('/api/shopify-seo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const d = await r.json();
+    if(d.error) throw new Error(d.error);
+
+    toast(`✓ Shopify updated — ${d.updated?.length||0} fields saved`, 'success');
+
+    // Update any push button to show success
+    document.querySelectorAll('[onclick*="studioPushSEO"]').forEach(btn => {
+      btn.textContent = '✓ Updated in Shopify!';
+      btn.style.background = 'var(--teal-light)';
+      btn.style.color = 'var(--teal)';
+      btn.disabled = true;
+    });
+  } catch(e) {
+    toast('Push failed: '+e.message, 'error');
+  }
 }
 
 function studioExportLog(){
