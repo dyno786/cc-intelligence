@@ -591,6 +591,30 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
         <div class="ai-card-hdr"><h3>🤖 AI Ads Budget Recommendations</h3><button class="copy-btn" onclick="copyText('ads-rec')">Copy</button></div>
         <div class="ai-card-body" id="ads-rec">Loading...</div>
       </div>
+
+      <!-- BRAND INTELLIGENCE -->
+      <div class="sec-title" style="margin-top:20px">🏷 Brand Budget Intelligence — Scale, Keep or Pause</div>
+      <div style="background:var(--card);border-radius:var(--r2);padding:12px 14px;margin-bottom:10px;border-left:3px solid var(--teal);font-size:12px;color:var(--ink2)">
+        Based on your actual conversion data. Green = scale up budget, Yellow = keep but optimise, Red = pause immediately.
+      </div>
+      <div id="brand-intelligence-grid" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+        <div style="text-align:center;padding:24px;color:var(--ink3);font-size:13px">Upload a Search Terms CSV above to see brand-by-brand analysis</div>
+      </div>
+
+      <!-- COLLECTION OFFERS -->
+      <div class="sec-title" style="margin-top:20px">🏷 Collection Discount Offers — Where a 10% Offer Will Drive Most Sales</div>
+      <div style="background:var(--card);border-radius:var(--r2);padding:12px 14px;margin-bottom:10px;border-left:3px solid var(--yellow2);font-size:12px;color:var(--ink2)">
+        Collections ranked by: high impressions + low conversion rate = offer will have biggest impact. Offers apply to collection pages only.
+      </div>
+      <div id="collection-offers-grid" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+        <div style="text-align:center;padding:24px;color:var(--ink3);font-size:13px">Upload a Search Terms CSV above to see collection offer recommendations</div>
+      </div>
+
+      <!-- NEGATIVE KEYWORDS TO ADD -->
+      <div class="sec-title" style="margin-top:20px">🚫 Negative Keywords — Add These Today</div>
+      <div id="negative-kw-section" style="margin-bottom:16px">
+        <div style="text-align:center;padding:24px;color:var(--ink3);font-size:13px">Upload Search Terms CSV to see wasted keywords to exclude</div>
+      </div>
     </div>
   </div>
 
@@ -1558,6 +1582,26 @@ async function handleAdsFile(file){
     document.getElementById('ads-data-source').textContent='Source: '+file.name+' (CSV upload) — connect developer token for live data';
     renderAds();
 
+    // If this is a Search Terms report — run brand + collection + negative kw analysis
+    const isSearchTerms = cols.find(c=>/search.?term/i.test(c));
+    if(isSearchTerms) {
+      const termCol = cols.find(c=>/search.?term/i.test(c));
+      const searchTermsData = rows.map(r=>({
+        term: r[termCol]||'',
+        cost: spendCol?toN(r[spendCol]):0,
+        clicks: clickCol?toN(r[clickCol]):0,
+        conv: convCol?toN(r[convCol]):0,
+        impr: imprCol?toN(r[imprCol]):0,
+      })).filter(r=>r.term && r.term!=='--' && !r.term.toLowerCase().includes('total'));
+
+      // Store for later use
+      liveData.searchTerms = searchTermsData;
+      renderBrandIntelligence(searchTermsData);
+      renderCollectionOffers(searchTermsData);
+      renderNegativeKeywords(searchTermsData);
+      toast('Search terms analysed — brand & collection insights ready','success');
+    }
+
     // Re-run AI analysis with ads data
     if(liveData.sc||liveData.shopify) runAnalysis();
 
@@ -1642,7 +1686,179 @@ function renderAds(){
   }).join('');
 }
 
-// ── RUN AI ANALYSIS ────────────────────────────────────────────────────────────
+// ── BRAND INTELLIGENCE ─────────────────────────────────────────────────────
+function renderBrandIntelligence(searchTermsData) {
+  const el = document.getElementById('brand-intelligence-grid');
+  if(!el) return;
+
+  const brands = {
+    'ORS': ['ors ','ors shampoo','ors relaxer','ors olive','ors curls'],
+    'Redken': ['redken'],
+    'Alberto Balsam': ['alberto balsam'],
+    'Dark & Lovely': ['dark and lovely','dark lovely'],
+    'Cantu': ['cantu'],
+    'Schwarzkopf': ['schwarzkopf'],
+    'Wave Nouveau': ['wave nouveau'],
+    'Tgin': ['tgin'],
+    'Kuza': ['kuza'],
+    'Neutrogena': ['neutrogena','t gel','t-gel'],
+    'Wella': ['wella'],
+    'Loreal': ['loreal',"l'oreal",'l oreal'],
+    'Nivea': ['nivea'],
+    'Garnier': ['garnier'],
+    'Creme of Nature': ['creme of nature'],
+    'Head & Shoulders': ['head and shoulders'],
+    'Pantene': ['pantene'],
+    'SheaMoisture': ['shea moisture','sheamoisture'],
+    'St Ives': ['st ives'],
+    'Dove': ['dove hair','dove shampoo','dove conditioner'],
+    'Ebin': ['ebin'],
+    'Got2b': ['got2b','got 2b'],
+  };
+
+  const results = [];
+  Object.entries(brands).forEach(([brand, terms]) => {
+    const rows = searchTermsData.filter(r =>
+      terms.some(t => (r.term||'').toLowerCase().includes(t))
+    );
+    if(!rows.length) return;
+    const spend = rows.reduce((s,r)=>s+(r.cost||0), 0);
+    const conv  = rows.reduce((s,r)=>s+(r.conv||0), 0);
+    const clicks= rows.reduce((s,r)=>s+(r.clicks||0), 0);
+    const cpa   = conv > 0 ? spend/conv : 9999;
+    if(spend < 0.10 && conv === 0) return;
+
+    let verdict, vcolor, vbg, action;
+    if(conv > 0 && cpa < 2) {
+      verdict='★ SCALE UP'; vcolor='#1E8449'; vbg='#D5F5E3';
+      action=`Increase budget — CPA only £${cpa.toFixed(2)}. Give this brand 5-10x more budget.`;
+    } else if(conv > 0 && cpa < 6) {
+      verdict='→ KEEP'; vcolor='#E67E22'; vbg='#FDEBD0';
+      action=`Good performance at £${cpa.toFixed(2)} CPA. Maintain or slightly increase budget.`;
+    } else if(conv > 0 && cpa >= 6) {
+      verdict='↓ REVIEW'; vcolor='#C0392B'; vbg='#FADBD8';
+      action=`CPA £${cpa.toFixed(2)} is high. Tighten keywords — use specific product terms not generic brand.`;
+    } else if(spend > 2) {
+      verdict='✗ PAUSE'; vcolor='#C0392B'; vbg='#FADBD8';
+      action='Zero conversions. Exclude from campaign or investigate landing page.';
+    } else {
+      verdict='? WATCH'; vcolor='#7F8C8D'; vbg='#F2F3F4';
+      action='Low spend, no data yet. Monitor for another month before deciding.';
+    }
+    results.push({brand, spend, conv, clicks, cpa, verdict, vcolor, vbg, action});
+  });
+
+  results.sort((a,b) => {
+    const order={'★ SCALE UP':0,'→ KEEP':1,'↓ REVIEW':2,'✗ PAUSE':3,'? WATCH':4};
+    return (order[a.verdict]||5)-(order[b.verdict]||5) || b.conv-a.conv;
+  });
+
+  el.innerHTML = results.map(r => `
+    <div style="background:var(--card);border-radius:var(--r2);padding:12px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;box-shadow:var(--shadow)">
+      <div style="flex:1;min-width:140px">
+        <div style="font-size:13px;font-weight:700;color:var(--ink)">${r.brand}</div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:2px">${r.clicks} clicks · £${r.spend.toFixed(2)} spent · ${r.conv.toFixed(0)} conv ${r.cpa<9999?'· CPA £'+r.cpa.toFixed(2):''}</div>
+      </div>
+      <span style="background:${r.vbg};color:${r.vcolor};border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0">${r.verdict}</span>
+      <div style="font-size:11px;color:var(--ink2);flex:2;min-width:160px">${r.action}</div>
+    </div>`).join('');
+}
+
+// ── COLLECTION OFFERS INTELLIGENCE ─────────────────────────────────────────
+function renderCollectionOffers(searchTermsData) {
+  const el = document.getElementById('collection-offers-grid');
+  if(!el) return;
+
+  const collections = [
+    {name:'Hair Dye & Colour', terms:['hair dye','hair colour','hair color','garnier','schwarzkopf dye','wella','loreal dye','colour creme','midnight blue','casting'], code:'COLOUR10', pct:'10%'},
+    {name:'Wigs & Extensions', terms:['wig','lace front','lace wig','headband wig','crochet wig','synthetic wig'], code:'WIGDEAL15', pct:'15%'},
+    {name:'Edge Control',      terms:['edge control','edges','got2b','ebin edge','eco styler edge'], code:'EDGE15', pct:'15%'},
+    {name:'Shampoo & Conditioner', terms:['shampoo','conditioner','co wash','alberto balsam shampoo'], code:'WASH10', pct:'10%'},
+    {name:'Braiding Hair',     terms:['braid','braiding','cherish','outre','x-pression','freetress','crochet hair','kanekalon'], code:'BRAID10', pct:'10%'},
+    {name:'Skin Care',         terms:['nivea','e45','st ives','coconut oil','body lotion','moisturiser','moisturizer'], code:'SKIN10', pct:'10%'},
+    {name:'Natural Hair Care', terms:['cantu','shea moisture','tgin','natural hair','curl cream','leave in conditioner'], code:'NATURAL10', pct:'10%'},
+    {name:'Hair Oils',         terms:['hair oil','argan oil','moroccanoil','castor oil hair','moroccan oil'], code:'OIL10', pct:'10%'},
+    {name:'Hair Growth',       terms:['hair growth','hair loss','biotin hair','hair vitamins','growth serum'], code:'GROW10', pct:'10%'},
+    {name:'Relaxers',          terms:['relaxer','dark and lovely','just for me','pcure','hair straighten relax'], code:null, pct:null},
+    {name:'Nail & Beauty',     terms:['nail polish','lip gloss','nail art','la colors nail'], code:null, pct:null},
+  ];
+
+  const results = collections.map(coll => {
+    const rows = searchTermsData.filter(r =>
+      coll.terms.some(t => (r.term||'').toLowerCase().includes(t))
+    );
+    const impr  = rows.reduce((s,r)=>s+(r.impr||0), 0);
+    const clicks= rows.reduce((s,r)=>s+(r.clicks||0), 0);
+    const conv  = rows.reduce((s,r)=>s+(r.conv||0), 0);
+    const convRate = clicks > 0 ? (conv/clicks*100) : 0;
+    return {...coll, impr, clicks, conv, convRate};
+  }).filter(c => c.impr > 500).sort((a,b) => {
+    // Sort: offer recommended first (low conv rate, high impr), then no offer needed
+    const scoreA = a.code ? (a.impr * (1 - a.convRate/10)) : -1;
+    const scoreB = b.code ? (b.impr * (1 - b.convRate/10)) : -1;
+    return scoreB - scoreA;
+  });
+
+  el.innerHTML = results.map(r => {
+    const needsOffer = r.code && r.convRate < 3;
+    const alreadyGood = !r.code || r.convRate >= 3;
+    const urgent = r.convRate === 0 && r.clicks > 20;
+    const bg = urgent ? '#FADBD8' : needsOffer ? '#FDEBD0' : '#D5F5E3';
+    const badge = urgent ? '🔴 15% OFF — urgent' : needsOffer ? '🟡 10% OFF recommended' : '🟢 Already converting well';
+    const badgeColor = urgent ? '#C0392B' : needsOffer ? '#E67E22' : '#1E8449';
+
+    return `<div style="background:var(--card);border-radius:var(--r2);padding:12px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;box-shadow:var(--shadow);border-left:3px solid ${badgeColor}">
+      <div style="flex:1;min-width:150px">
+        <div style="font-size:13px;font-weight:700;color:var(--ink)">${r.name}</div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:2px">${r.impr.toLocaleString()} impressions · ${r.clicks} clicks · ${r.convRate.toFixed(1)}% conv rate</div>
+      </div>
+      <span style="background:${bg};color:${badgeColor};border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0">${badge}</span>
+      ${r.code ? `<div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;color:var(--teal);background:var(--teal-light);padding:4px 12px;border-radius:6px;flex-shrink:0">CODE: ${r.code}</div>` : ''}
+      <div style="font-size:11px;color:var(--ink2);flex:2;min-width:160px">${
+        urgent ? `${r.clicks} people clicked, ZERO bought. Add ${r.pct} discount code ${r.code} to collection page today.` :
+        needsOffer ? `Add ${r.pct} off code ${r.code} to collection page banner. ${r.impr.toLocaleString()} monthly searches need a reason to buy.` :
+        `Conv rate ${r.convRate.toFixed(1)}% — good. Focus on growing traffic rather than discounting.`
+      }</div>
+    </div>`;
+  }).join('');
+}
+
+// ── NEGATIVE KEYWORDS SECTION ───────────────────────────────────────────────
+function renderNegativeKeywords(searchTermsData) {
+  const el = document.getElementById('negative-kw-section');
+  if(!el) return;
+
+  const supermarketTerms = ['mustard oil','olive oil','coconut oil','baby oil','e45','st ives','nivea soft','nivea lotion','nivea moistur',
+    'head and shoulders','pantene','garnier shampoo','elvive','dove shampoo','dove conditioner','apple cider vinegar','t gel shampoo'];
+
+  const wasted = searchTermsData
+    .filter(r => (r.cost||0) > 0.50 && (r.conv||0) === 0)
+    .sort((a,b) => (b.cost||0)-(a.cost||0))
+    .slice(0,20);
+
+  if(!wasted.length) { el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--teal);font-size:13px">✓ No significant wasted spend found</div>'; return; }
+
+  const totalWaste = wasted.reduce((s,r)=>s+(r.cost||0),0);
+
+  el.innerHTML = `
+    <div style="background:var(--red-bg);border-radius:var(--r2);padding:10px 14px;margin-bottom:10px;font-size:12px;color:var(--red);font-weight:700">
+      £${totalWaste.toFixed(2)} total wasted on top 20 zero-conversion terms — add these as negative keywords at Campaign level
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      ${wasted.map(r => {
+        const isSupermarket = supermarketTerms.some(t => (r.term||'').toLowerCase().includes(t));
+        return `<div style="background:var(--card);border-radius:var(--r);padding:10px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;box-shadow:var(--shadow)">
+          <div style="flex:1;min-width:140px;font-size:12px;font-weight:600;color:var(--ink)">"${r.term}"</div>
+          <span style="font-size:11px;font-weight:700;color:var(--red);background:var(--red-bg);padding:2px 8px;border-radius:4px;flex-shrink:0">£${(r.cost||0).toFixed(2)} wasted</span>
+          <span style="font-size:10px;color:var(--ink3);flex-shrink:0">${r.clicks||0} clicks</span>
+          <span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;flex-shrink:0;${isSupermarket?'background:#FADBD8;color:#C0392B':'background:#FDEBD0;color:#E67E22'}">${isSupermarket?'Supermarket brand — exclude':'Investigate page'}</span>
+          <div style="font-size:11px;color:var(--ink3);flex-shrink:0">Search Terms → tick → Negative → Campaign</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+// ── HOOK INTO ADS CSV UPLOAD ────────────────────────────────────────────────
 async function runAnalysis(){
   document.getElementById('actions-loading').style.display='block';
   document.getElementById('actions-content').style.display='none';
