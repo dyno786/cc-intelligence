@@ -9,49 +9,49 @@ export default async function handler(req, res) {
     if (!token) return res.json({ error: 'Not authenticated — please log in first' });
 
     const devToken = process.env.GOOGLE_ADS_DEV_TOKEN || '';
+
+    // Test A: Check token scopes
+    const scopeR = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${token}`);
+    const scopeData = await scopeR.json();
+
+    // Test B: Raw headers being sent
     const managerId = '7490010943';
     const clientId  = '3934493272';
+    const url = `https://googleads.googleapis.com/v19/customers:listAccessibleCustomers`;
+    
+    const hdrs = {
+      'Authorization': `Bearer ${token}`,
+      'developer-token': devToken,
+      'login-customer-id': managerId,
+      'Content-Type': 'application/json',
+    };
 
-    // Test 1: v19 list accessible customers
-    const t1 = await fetch(`https://googleads.googleapis.com/v19/customers:listAccessibleCustomers`, {
-      headers: { 'Authorization': `Bearer ${token}`, 'developer-token': devToken }
-    });
-    const t1text = await t1.text();
+    // Test C: Hit the endpoint and get ALL response headers
+    const r = await fetch(url, { headers: hdrs });
+    const responseHeaders = {};
+    r.headers.forEach((v, k) => { responseHeaders[k] = v; });
+    const body = await r.text();
 
-    // Test 2: v20 list accessible customers  
-    const t2 = await fetch(`https://googleads.googleapis.com/v20/customers:listAccessibleCustomers`, {
-      headers: { 'Authorization': `Bearer ${token}`, 'developer-token': devToken }
-    });
-    const t2text = await t2.text();
-
-    // Test 3: Check token scopes via Google tokeninfo
-    const t3 = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${token}`);
-    const t3text = await t3.text();
-
-    // Test 4: v19 campaign query with correct headers
-    const t4 = await fetch(`https://googleads.googleapis.com/v19/customers/${clientId}/googleAds:search`, {
-      method: 'POST',
+    // Test D: Try without login-customer-id header
+    const r2 = await fetch(url, { 
       headers: {
         'Authorization': `Bearer ${token}`,
         'developer-token': devToken,
-        'login-customer-id': managerId,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify({ query: 'SELECT campaign.name FROM campaign LIMIT 3' }),
+      }
     });
-    const t4text = await t4.text();
+    const body2 = await r2.text();
 
     res.json({
-      tokenSnippet: token.substring(0,30)+'...',
-      devTokenPresent: !!devToken,
+      tokenScopes: scopeData.scope || scopeData.error || 'no scope field',
+      tokenEmail: scopeData.email || 'not in token',
       devTokenLength: devToken.length,
-      t1_v19_list: { status: t1.status, body: t1text.substring(0, 500) },
-      t2_v20_list: { status: t2.status, body: t2text.substring(0, 500) },
-      t3_tokeninfo: { status: t3.status, body: t3text.substring(0, 500) },
-      t4_campaign_query: { status: t4.status, body: t4text.substring(0, 500) },
+      devTokenStart: devToken.substring(0,4),
+      devTokenEnd: devToken.substring(devToken.length-4),
+      urlCalled: url,
+      withManagerId: { status: r.status, headers: responseHeaders, body: body.substring(0,800) },
+      withoutManagerId: { status: r2.status, body: body2.substring(0,400) },
     });
   } catch(err) {
-    res.json({ error: err.message, stack: err.stack?.substring(0,300) });
+    res.json({ error: err.message });
   }
 }
