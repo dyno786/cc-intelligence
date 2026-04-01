@@ -30,7 +30,7 @@ export default async function handler(req, res) {
     };
 
     // Helper: run a GAQL query
-    async function gaql(query) {
+    async function gaql(query, label='') {
       const r = await fetch(BASE, {
         method: 'POST',
         headers,
@@ -38,8 +38,8 @@ export default async function handler(req, res) {
       });
       const text = await r.text();
       if (!r.ok) {
-        console.error('GAQL error', r.status, text.substring(0,300));
-        return { results: [] };
+        console.error(`GAQL [${label}] ERROR ${r.status}:`, text.substring(0,600));
+        return { results: [], _error: { status: r.status, body: text.substring(0,600) } };
       }
       try { return JSON.parse(text); }
       catch(e) { return { results: [] }; }
