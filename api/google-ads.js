@@ -4,7 +4,7 @@ export const config = { maxDuration: 60 };
 
 const MANAGER_ID  = '7490010943';
 const CLIENT_ID   = '3934493272';
-const ADS_VERSION = 'v17';
+const ADS_VERSION = 'v19';
 const BASE        = `https://googleads.googleapis.com/${ADS_VERSION}/customers/${CLIENT_ID}/googleAds:search`;
 
 export default async function handler(req, res) {
