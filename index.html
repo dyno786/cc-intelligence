@@ -521,99 +521,150 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
 
   <!-- ADS TAB -->
   <div class="screen" id="screen-ads">
+
+    <!-- LIVE DATA BANNER — shown when API connected -->
+    <div id="ads-live-banner" style="display:none;background:linear-gradient(135deg,var(--teal),var(--teal2));border-radius:var(--r2);padding:12px 16px;margin-bottom:14px;display:none;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="width:10px;height:10px;border-radius:50%;background:#fff;display:inline-block;animation:pulse 1.5s infinite"></span>
+        <span style="font-size:13px;font-weight:700;color:#fff">LIVE — Google Ads API Connected</span>
+        <span style="font-size:11px;color:rgba(255,255,255,.75)" id="ads-fetched-at"></span>
+      </div>
+      <button onclick="refreshAdsLive()" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:var(--r);padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">↻ Refresh</button>
+    </div>
+
+    <!-- CSV UPLOAD — shown when API not connected -->
     <div id="ads-upload-section">
-      <div style="background:var(--yellow-bg);border:1.5px solid var(--yellow2);border-radius:var(--r2);padding:14px 18px;margin-bottom:16px;display:flex;align-items:start;gap:12px">
-        <div style="font-size:20px;flex-shrink:0">💡</div>
+      <div style="background:var(--teal-light);border:1.5px solid var(--teal);border-radius:var(--r2);padding:14px 18px;margin-bottom:16px;display:flex;align-items:start;gap:12px">
+        <div style="font-size:20px;flex-shrink:0">✅</div>
         <div>
-          <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:3px">Google Ads API — upload CSV while developer token is being set up</div>
-          <div style="font-size:12px;color:var(--ink2);line-height:1.6">Export from: ads.google.com → Reports → Campaign performance → Download CSV. Once developer token is added to Vercel, this tab will update live automatically.</div>
+          <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:3px">Google Ads API Connected — Live data loading automatically</div>
+          <div style="font-size:12px;color:var(--ink2);line-height:1.6">Your Ads data refreshes with the dashboard. You can also upload a CSV below for manual analysis of ad groups and search terms.</div>
         </div>
       </div>
-      <div style="background:var(--card);border:2px dashed var(--border2);border-radius:var(--r2);padding:32px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:16px;position:relative"
+      <div style="background:var(--card);border:2px dashed var(--border2);border-radius:var(--r2);padding:24px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:16px;position:relative"
         ondragover="event.preventDefault();document.getElementById('ads-dz').style.borderColor='var(--teal)'"
         ondragleave="document.getElementById('ads-dz').style.borderColor='var(--border2)'"
         ondrop="handleAdsDrop(event)" id="ads-dz">
         <input type="file" accept=".csv,.xlsx" onchange="handleAdsFile(this.files[0])" style="position:absolute;inset:0;opacity:0;cursor:pointer">
-        <div style="font-size:32px;margin-bottom:10px">📊</div>
-        <div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:4px">Drop your Google Ads CSV here</div>
-        <div style="font-size:12px;color:var(--ink3)">or click to choose file · CSV or XLSX</div>
-        <div id="ads-upload-status" style="margin-top:10px;font-size:12px;font-weight:600;color:var(--teal);display:none">Loading...</div>
+        <div style="font-size:24px;margin-bottom:8px">📊</div>
+        <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:3px">Drop Search Terms or Ad Groups CSV for deeper analysis</div>
+        <div style="font-size:12px;color:var(--ink3)">Supplements live API data with search term and brand-level insights</div>
+        <div id="ads-upload-status" style="margin-top:8px;font-size:12px;font-weight:600;color:var(--teal);display:none">Loading...</div>
       </div>
     </div>
-    <div id="ads-loading" class="loading-state" style="display:none"><div class="spin"></div><p>Analysing Ads data...</p></div>
+
+    <div id="ads-loading" class="loading-state" style="display:none"><div class="spin"></div><p>Loading live Google Ads data...</p></div>
+
     <div id="ads-content" style="display:none">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
         <div style="font-size:12px;color:var(--ink3)" id="ads-data-source"></div>
-        <button onclick="resetAdsData()" style="background:var(--card2);border:1px solid var(--border2);color:var(--ink3);border-radius:8px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">Upload new file</button>
+        <button onclick="resetAdsData()" style="background:var(--card2);border:1px solid var(--border2);color:var(--ink3);border-radius:8px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">Upload CSV</button>
       </div>
+
+      <!-- ACCOUNT METRICS -->
       <div class="metrics-row" id="ads-metrics"></div>
 
-      <!-- VERDICT ENGINE -->
-      <div class="sec-title">🎯 Campaign Decisions — What To Do With Each Campaign</div>
+      <!-- SMART INSIGHTS -->
+      <div id="ads-insights-section" style="display:none;margin-bottom:16px">
+        <div class="sec-title">💡 Live Insights</div>
+        <div id="ads-insights-list" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+
+      <!-- CAMPAIGNS -->
+      <div class="sec-title">🎯 Campaigns</div>
       <div class="tbl-wrap" style="margin-bottom:16px">
         <table class="tbl">
-          <thead><tr>
-            <th>Campaign</th>
-            <th>Spend</th>
-            <th>Clicks</th>
-            <th>Conv.</th>
-            <th>CPA</th>
-            <th>ROAS</th>
-            <th>Verdict</th>
-          </tr></thead>
+          <thead><tr><th>Campaign</th><th>Spend</th><th>Conv.</th><th>CPA</th><th>Conv Rate</th><th>Imp Share</th><th>Verdict</th></tr></thead>
           <tbody id="ads-tbody"></tbody>
         </table>
       </div>
 
-      <!-- WASTED SPEND ALERT -->
+      <!-- AD GROUPS — THE NEW SECTION -->
+      <div class="sec-title" style="margin-top:4px">📦 Ad Groups — Scale, Keep, Pause or Fix</div>
+      <div style="background:var(--card);border-left:3px solid var(--teal);border-radius:0 var(--r) var(--r) 0;padding:10px 14px;margin-bottom:12px;font-size:12px;color:var(--ink2)">
+        Every ad group in your account ranked by performance. Green = scale up, Yellow = optimise, Red = pause or fix immediately.
+      </div>
+      <!-- Filter pills -->
+      <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px" id="ag-filter-pills">
+        <button class="studio-pill active" onclick="filterAdGroups('all',this)">All</button>
+        <button class="studio-pill" onclick="filterAdGroups('SCALE UP',this)">🟢 Scale Up</button>
+        <button class="studio-pill" onclick="filterAdGroups('KEEP',this)">🟡 Keep</button>
+        <button class="studio-pill" onclick="filterAdGroups('PAUSE',this)">🔴 Pause</button>
+        <button class="studio-pill" onclick="filterAdGroups('OPTIMISE',this)">⚙ Optimise</button>
+        <button class="studio-pill" onclick="filterAdGroups('REVIEW',this)">👁 Review</button>
+      </div>
+      <div id="ad-groups-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+        <div style="text-align:center;padding:24px;color:var(--ink3);font-size:13px">Ad group data loading…</div>
+      </div>
+
+      <!-- KEYWORDS -->
+      <div class="sec-title">🔑 Keywords — Individual Bid Decisions</div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px" id="kw-filter-pills">
+        <button class="studio-pill active" onclick="filterKeywords('all',this)">All</button>
+        <button class="studio-pill" onclick="filterKeywords('SCALE UP',this)">🟢 Scale Up</button>
+        <button class="studio-pill" onclick="filterKeywords('PAUSE',this)">🔴 Pause</button>
+        <button class="studio-pill" onclick="filterKeywords('LOW QS — improve',this)">⚠ Low Quality Score</button>
+        <button class="studio-pill" onclick="filterKeywords('REVIEW',this)">👁 Review</button>
+      </div>
+      <div class="tbl-wrap" style="margin-bottom:16px">
+        <table class="tbl" id="kw-table">
+          <thead><tr><th>Keyword</th><th>Match</th><th>Ad Group</th><th>Spend</th><th>Conv.</th><th>CPA</th><th>QS</th><th>Action</th></tr></thead>
+          <tbody id="kw-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- LANDING PAGES -->
+      <div id="lp-section" style="display:none;margin-bottom:16px">
+        <div class="sec-title">🔗 Landing Pages — Which Pages Need Fixing</div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr><th>URL</th><th>Campaign</th><th>Clicks</th><th>Conv.</th><th>Conv Rate</th><th>Status</th></tr></thead>
+            <tbody id="lp-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- DEVICE BREAKDOWN -->
+      <div class="sec-title">📱 Device Performance</div>
+      <div id="device-breakdown" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:16px"></div>
+
+      <!-- WASTED SPEND -->
       <div id="wasted-spend-section" style="display:none;margin-bottom:16px">
-        <div class="sec-title">🔥 Wasted Spend Alert</div>
+        <div class="sec-title">🚫 Wasted Spend — Add As Negative Keywords</div>
         <div class="ai-card">
-          <div class="ai-card-hdr" style="background:linear-gradient(135deg,var(--red),#c0392b)"><h3>Campaigns spending with no conversions</h3></div>
+          <div class="ai-card-hdr" style="background:linear-gradient(135deg,var(--red),#c0392b)"><h3>Zero-conversion search terms costing you money</h3></div>
           <div class="ai-card-body" id="wasted-spend-content" style="font-size:13px"></div>
         </div>
       </div>
 
       <!-- BUDGET REBALANCER -->
-      <div class="sec-title">💡 Budget Rebalancer</div>
+      <div class="sec-title">💰 Budget Rebalancer</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
-        <div class="ai-card">
-          <div class="ai-card-hdr"><h3>📊 Current Spend Split</h3></div>
-          <div class="ai-card-body" id="spend-split" style="font-size:12px"></div>
-        </div>
-        <div class="ai-card">
-          <div class="ai-card-hdr"><h3>✅ Recommended Split</h3></div>
-          <div class="ai-card-body" id="recommended-split" style="font-size:12px"></div>
-        </div>
+        <div class="ai-card"><div class="ai-card-hdr"><h3>📊 Current Split</h3></div><div class="ai-card-body" id="spend-split" style="font-size:12px"></div></div>
+        <div class="ai-card"><div class="ai-card-hdr"><h3>✅ Recommended</h3></div><div class="ai-card-body" id="recommended-split" style="font-size:12px"></div></div>
       </div>
 
-      <div class="ai-card">
-        <div class="ai-card-hdr"><h3>🤖 AI Ads Budget Recommendations</h3><button class="copy-btn" onclick="copyText('ads-rec')">Copy</button></div>
+      <div class="ai-card" style="margin-bottom:16px">
+        <div class="ai-card-hdr"><h3>🤖 AI Recommendations</h3><button class="copy-btn" onclick="copyText('ads-rec')">Copy</button></div>
         <div class="ai-card-body" id="ads-rec">Loading...</div>
       </div>
 
-      <!-- BRAND INTELLIGENCE -->
-      <div class="sec-title" style="margin-top:20px">🏷 Brand Budget Intelligence — Scale, Keep or Pause</div>
-      <div style="background:var(--card);border-radius:var(--r2);padding:12px 14px;margin-bottom:10px;border-left:3px solid var(--teal);font-size:12px;color:var(--ink2)">
-        Based on your actual conversion data. Green = scale up budget, Yellow = keep but optimise, Red = pause immediately.
-      </div>
-      <div id="brand-intelligence-grid" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
-        <div style="text-align:center;padding:24px;color:var(--ink3);font-size:13px">Upload a Search Terms CSV above to see brand-by-brand analysis</div>
+      <!-- BRAND INTELLIGENCE (from CSV) -->
+      <div id="brand-intel-wrapper" style="display:none">
+        <div class="sec-title">🏷 Brand Intelligence</div>
+        <div id="brand-intelligence-grid" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
       </div>
 
-      <!-- COLLECTION OFFERS -->
-      <div class="sec-title" style="margin-top:20px">🏷 Collection Discount Offers — Where a 10% Offer Will Drive Most Sales</div>
-      <div style="background:var(--card);border-radius:var(--r2);padding:12px 14px;margin-bottom:10px;border-left:3px solid var(--yellow2);font-size:12px;color:var(--ink2)">
-        Collections ranked by: high impressions + low conversion rate = offer will have biggest impact. Offers apply to collection pages only.
-      </div>
-      <div id="collection-offers-grid" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
-        <div style="text-align:center;padding:24px;color:var(--ink3);font-size:13px">Upload a Search Terms CSV above to see collection offer recommendations</div>
+      <!-- COLLECTION OFFERS (from CSV) -->
+      <div id="coll-offers-wrapper" style="display:none">
+        <div class="sec-title">🎁 Collection Offer Recommendations</div>
+        <div id="collection-offers-grid" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
       </div>
 
-      <!-- NEGATIVE KEYWORDS TO ADD -->
-      <div class="sec-title" style="margin-top:20px">🚫 Negative Keywords — Add These Today</div>
-      <div id="negative-kw-section" style="margin-bottom:16px">
-        <div style="text-align:center;padding:24px;color:var(--ink3);font-size:13px">Upload Search Terms CSV to see wasted keywords to exclude</div>
+      <!-- NEGATIVE KWS (from CSV) -->
+      <div id="neg-kw-wrapper" style="display:none">
+        <div class="sec-title">🚫 Negative Keywords From Search Terms</div>
+        <div id="negative-kw-section" style="margin-bottom:16px"></div>
       </div>
     </div>
   </div>
@@ -1622,74 +1673,235 @@ function resetAdsData(){
   setConn('ads','');
 }
 
-function renderAds(){
-  document.getElementById('ads-loading').style.display='none';
-  const ad=liveData.ads;
-  if(!ad){document.getElementById('ads-content').innerHTML='<div class="empty"><div class="icon">💰</div><h3>Google Ads data loading</h3><p>Connect Google account to see live campaign data.</p></div>';return;}
-  document.getElementById('ads-content').style.display='block';
+let _allAdGroups = [];
+let _allKeywords = [];
 
-  const cpa=ad.totalConv>0?(ad.totalSpend/ad.totalConv):0;
-  document.getElementById('ads-metrics').innerHTML=[
-    {val:fmtGbp(ad.totalSpend||0),lbl:'Period Spend',sub:'vs £'+cfg().budget+'/mo budget',cls:''},
-    {val:fmtNum(ad.totalClicks||0),lbl:'Paid Clicks',sub:'',cls:'green'},
-    {val:Math.round(ad.totalConv||0).toString(),lbl:'Conversions',sub:'',cls:ad.totalConv>0?'green':'red'},
-    {val:cpa>0?fmtGbp(cpa):'N/A',lbl:'Cost/Conv',sub:cpa<10?'Excellent':cpa<20?'OK':'Review',cls:cpa>0&&cpa<10?'green':cpa>20?'red':'amber'},
-  ].map(m=>`<div class="metric"><div class="metric-val ${m.cls}">${m.val}</div><div class="metric-lbl">${m.lbl}</div><div class="metric-sub">${m.sub}</div></div>`).join('');
+function filterAdGroups(verdict, btn) {
+  document.querySelectorAll('#ag-filter-pills .studio-pill').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  const filtered = verdict === 'all' ? _allAdGroups : _allAdGroups.filter(ag=>ag.verdict===verdict);
+  renderAdGroupsList(filtered);
+}
 
-  const avgOrderVal = liveData.shopify ? (liveData.shopify.weekRevenue/Math.max(liveData.shopify.weekOrders,1)) : 30;
-  const wastedCamps = (ad.campaigns||[]).filter(c=>c.conversions===0&&c.cost>5);
-  
-  if(wastedCamps.length){
-    document.getElementById('wasted-spend-section').style.display='block';
-    const wastedTotal=wastedCamps.reduce((s,c)=>s+c.cost,0);
-    document.getElementById('wasted-spend-content').innerHTML=`
-      <div style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:8px">£${wastedTotal.toFixed(2)} spent with zero conversions — pause these campaigns immediately</div>
-      ${wastedCamps.map(c=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">
-        <span>${c.name}</span><span style="font-weight:700;color:var(--red)">£${c.cost.toFixed(2)} wasted</span>
-      </div>`).join('')}
-      <div style="margin-top:10px;font-size:12px;color:var(--ink2)">Redirect this £${wastedTotal.toFixed(2)} to your best-performing campaigns. Go to Google Ads → Campaigns → toggle off each one above.</div>`;
-  }
+function filterKeywords(verdict, btn) {
+  document.querySelectorAll('#kw-filter-pills .studio-pill').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  const filtered = verdict === 'all' ? _allKeywords : _allKeywords.filter(kw=>kw.verdict===verdict);
+  renderKeywordsTable(filtered);
+}
 
-  // Spend split
-  const totalS=ad.totalSpend||1;
-  const spendSplitEl=document.getElementById('spend-split');
-  const recSplitEl=document.getElementById('recommended-split');
-  if(spendSplitEl){
-    spendSplitEl.innerHTML=(ad.campaigns||[]).map(c=>`
-      <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:0.5px solid var(--border)">
-        <span>${c.name}</span>
-        <span><strong>£${c.cost.toFixed(2)}</strong> (${(c.cost/totalS*100).toFixed(0)}%)</span>
-      </div>`).join('');
-  }
-  if(recSplitEl){
-    const goodCamps=(ad.campaigns||[]).filter(c=>c.conversions>0);
-    const goodTotal=goodCamps.reduce((s,c)=>s+c.cost,0)||1;
-    recSplitEl.innerHTML=goodCamps.length?goodCamps.map(c=>`
-      <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:0.5px solid var(--border)">
-        <span>${c.name}</span>
-        <span style="color:var(--teal)"><strong>£${(ad.totalSpend*(c.cost/goodTotal)).toFixed(2)}</strong> recommended</span>
-      </div>`).join(''):'<div style="color:var(--ink3);font-size:12px">No converting campaigns yet — review search terms and add negative keywords</div>';
-  }
+function renderAdGroupsList(adGroups) {
+  const el = document.getElementById('ad-groups-list');
+  if(!el) return;
+  if(!adGroups.length) { el.innerHTML='<div style="text-align:center;padding:24px;color:var(--ink3);font-size:13px">No ad groups match this filter</div>'; return; }
 
-  document.getElementById('ads-tbody').innerHTML=(ad.campaigns||[]).map(c=>{
-    const cpa2=c.conversions>0?(c.cost/c.conversions):0;
-    const v=getVerdict(c,avgOrderVal);
-    return`<tr>
-      <td class="kw">${c.name||''}</td>
-      <td>${fmtGbp(c.cost||0)}</td>
-      <td>${fmtNum(c.clicks||0)}</td>
-      <td class="${c.conversions>0?'good':'neu'}">${(c.conversions||0).toFixed(1)}</td>
-      <td class="${cpa2<10?'good':cpa2>20?'bad':'ok'}">${cpa2>0?fmtGbp(cpa2):'-'}</td>
-      <td class="${c.roas>3?'good':c.roas>1?'ok':'bad'}">${c.roas?c.roas.toFixed(1)+'x':'-'}</td>
-      <td><span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;${v.cls}">${v.label}</span></td>
+  const verdictStyle = {
+    'SCALE UP': { bg:'#D5F5E3', color:'#1E8449', icon:'★' },
+    'KEEP':     { bg:'#D6EAF8', color:'#185FA5', icon:'→' },
+    'OPTIMISE': { bg:'#FDEBD0', color:'#E67E22', icon:'⚙' },
+    'REVIEW':   { bg:'#FDEBD0', color:'#E67E22', icon:'👁' },
+    'PAUSE':    { bg:'#FADBD8', color:'#C0392B', icon:'✗' },
+    'REDUCE':   { bg:'#FADBD8', color:'#C0392B', icon:'↓' },
+    'MONITOR':  { bg:'#F2F3F4', color:'#7F8C8D', icon:'…' },
+  };
+
+  el.innerHTML = adGroups.map(ag => {
+    const s = verdictStyle[ag.verdict] || verdictStyle['MONITOR'];
+    return `<div style="background:var(--card);border-radius:var(--r2);padding:12px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;box-shadow:var(--shadow);border-left:3px solid ${s.color}">
+      <div style="flex:1;min-width:180px">
+        <div style="font-size:13px;font-weight:700;color:var(--ink)">${ag.name}</div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:2px">${ag.campaignName} · ${ag.clicks.toLocaleString()} clicks · £${ag.cost.toFixed(2)} spent · ${ag.conv.toFixed(1)} conv${ag.cpa>0?' · CPA £'+ag.cpa.toFixed(2):''}</div>
+      </div>
+      <span style="background:${s.bg};color:${s.color};border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0">${s.icon} ${ag.verdict}</span>
+      ${ag.impressionShare>0?`<span style="font-size:11px;color:var(--ink3);flex-shrink:0">${ag.impressionShare.toFixed(0)}% imp share</span>`:''}
+      <div style="font-size:11px;color:var(--ink2);flex:2;min-width:160px">${ag.action}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderKeywordsTable(keywords) {
+  const tbody = document.getElementById('kw-tbody');
+  if(!tbody) return;
+  const verdictColor = { 'SCALE UP':'var(--teal)', 'PAUSE':'var(--red)', 'LOW QS — improve':'var(--yellow2)', 'REVIEW':'var(--yellow2)', 'KEEP':'var(--ink2)', 'MONITOR':'var(--ink3)' };
+  tbody.innerHTML = keywords.slice(0,50).map(kw => {
+    const vc = verdictColor[kw.verdict] || 'var(--ink3)';
+    const qsBadge = kw.qualityScore > 0
+      ? `<span style="background:${kw.qualityScore<5?'var(--red-bg)':kw.qualityScore<7?'var(--yellow-bg)':'var(--teal-light)'};color:${kw.qualityScore<5?'var(--red)':kw.qualityScore<7?'var(--yellow2)':'var(--teal)'};border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700">${kw.qualityScore}/10</span>`
+      : '<span style="color:var(--ink3);font-size:10px">—</span>';
+    return `<tr>
+      <td class="kw" style="font-weight:600">${kw.text}</td>
+      <td style="font-size:11px;color:var(--ink3)">${kw.matchType?.toLowerCase()||''}</td>
+      <td style="font-size:11px;color:var(--ink2)">${kw.adGroup}</td>
+      <td>${fmtGbp(kw.cost)}</td>
+      <td class="${kw.conv>0?'good':'neu'}">${kw.conv.toFixed(1)}</td>
+      <td class="${kw.cpa>0&&kw.cpa<5?'good':kw.cpa>15?'bad':'ok'}">${kw.cpa>0?fmtGbp(kw.cpa):'—'}</td>
+      <td>${qsBadge}</td>
+      <td><span style="font-size:11px;font-weight:700;color:${vc}">${kw.verdict}</span></td>
     </tr>`;
   }).join('');
 }
+
+async function refreshAdsLive() {
+  const sc=cfg(); if(!sc.token) return;
+  document.getElementById('ads-loading').style.display='block';
+  document.getElementById('ads-content').style.display='none';
+  try {
+    const r = await fetch('/api/google-ads');
+    const d = await r.json();
+    if(d.error) throw new Error(d.error);
+    liveData.ads = d;
+    renderAds();
+  } catch(e) {
+    document.getElementById('ads-loading').style.display='none';
+    toast('Ads refresh failed: '+e.message,'error');
+  }
+}
+
+function renderAds(){
+  document.getElementById('ads-loading').style.display='none';
+  const ad=liveData.ads;
+  if(!ad){
+    document.getElementById('ads-content').innerHTML='<div class="empty"><div class="icon">💰</div><h3>Google Ads loading</h3><p>Connecting to Google Ads API...</p></div>';
+    return;
+  }
+  document.getElementById('ads-content').style.display='block';
+
+  // Show live banner if from API
+  if(ad.live) {
+    const banner = document.getElementById('ads-live-banner');
+    if(banner) { banner.style.display='flex'; }
+    const fetchedEl = document.getElementById('ads-fetched-at');
+    if(fetchedEl && ad.fetchedAt) fetchedEl.textContent = 'Updated ' + new Date(ad.fetchedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  }
+
+  const cpa = ad.totalConv>0 ? (ad.totalSpend/ad.totalConv) : 0;
+  const wastedSpend = ad.wastedSpend || 0;
+
+  document.getElementById('ads-metrics').innerHTML=[
+    {val:fmtGbp(ad.totalSpend||0),     lbl:'Total Spend',    sub:'Last 30 days',                    cls:''},
+    {val:fmtNum(ad.totalClicks||0),    lbl:'Paid Clicks',    sub:'',                                cls:'green'},
+    {val:(ad.totalConv||0).toFixed(0), lbl:'Conversions',    sub:ad.totalConv>0?'':'No conversions', cls:ad.totalConv>0?'green':'red'},
+    {val:cpa>0?fmtGbp(cpa):'N/A',     lbl:'Cost/Conv',      sub:cpa<10?'Excellent':cpa<20?'OK':'Review',cls:cpa>0&&cpa<10?'green':cpa>20?'red':'amber'},
+    {val:fmtGbp(wastedSpend),          lbl:'Wasted Spend',   sub:'Zero-conv terms',                 cls:wastedSpend>50?'red':'amber'},
+  ].map(m=>`<div class="metric"><div class="metric-val ${m.cls}">${m.val}</div><div class="metric-lbl">${m.lbl}</div><div class="metric-sub">${m.sub}</div></div>`).join('');
+
+  // Smart insights from API
+  const insights = ad.insights || [];
+  const insightsSection = document.getElementById('ads-insights-section');
+  const insightsList = document.getElementById('ads-insights-list');
+  if(insights.length && insightsSection && insightsList) {
+    insightsSection.style.display='block';
+    const typeStyle = { win:'var(--teal)', alert:'var(--red)', tip:'var(--yellow2)' };
+    const typeIcon  = { win:'✓', alert:'⚠', tip:'💡' };
+    insightsList.innerHTML = insights.map(ins => `
+      <div style="background:var(--card);border-left:3px solid ${typeStyle[ins.type]||'var(--ink3)'};border-radius:0 var(--r2) var(--r2) 0;padding:10px 14px;font-size:12px;color:var(--ink2)">
+        <span style="font-weight:700;color:${typeStyle[ins.type]||'var(--ink3)'}">${typeIcon[ins.type]||'·'} </span>${ins.msg}
+      </div>`).join('');
+  }
+
+  // Campaigns table
+  document.getElementById('ads-tbody').innerHTML=(ad.campaigns||[]).map(c=>{
+    const verdictColor = c.cpa>0&&c.cpa<5?'var(--teal)':c.cpa>15?'var(--red)':'var(--yellow2)';
+    const verdict = c.cpa>0&&c.cpa<5?'Scale Up':c.conversions===0&&c.cost>10?'Pause':c.cpa>15?'Reduce':'Keep';
+    return `<tr>
+      <td class="kw">${c.name||''}</td>
+      <td>${fmtGbp(c.cost||0)}</td>
+      <td class="${c.conversions>0?'good':'neu'}">${(c.conversions||0).toFixed(0)}</td>
+      <td class="${c.cpa<10?'good':c.cpa>20?'bad':'ok'}">${c.cpa>0?fmtGbp(c.cpa):'—'}</td>
+      <td>${c.ctr?c.ctr.toFixed(1)+'%':'—'}</td>
+      <td style="font-size:11px;color:var(--ink3)">${c.impressionShare>0?c.impressionShare.toFixed(0)+'%':'—'}</td>
+      <td><span style="font-size:11px;font-weight:700;color:${verdictColor}">${verdict}</span></td>
+    </tr>`;
+  }).join('');
+
+  // Ad Groups
+  _allAdGroups = ad.adGroups || [];
+  if(_allAdGroups.length) renderAdGroupsList(_allAdGroups);
+
+  // Keywords
+  _allKeywords = ad.keywords || [];
+  if(_allKeywords.length) renderKeywordsTable(_allKeywords);
+
+  // Landing pages
+  const lps = (ad.landingPages||[]).filter(lp=>lp.clicks>10);
+  if(lps.length) {
+    document.getElementById('lp-section').style.display='block';
+    document.getElementById('lp-tbody').innerHTML = lps.slice(0,20).map(lp => {
+      const handle = lp.url.split('/products/')[1]?.split('?')[0] || lp.url.replace('https://cchairandbeauty.com','') || lp.url;
+      return `<tr>
+        <td class="kw" style="font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${lp.url}">${handle}</td>
+        <td style="font-size:11px">${lp.campaign}</td>
+        <td>${lp.clicks}</td>
+        <td class="${lp.conv>0?'good':'neu'}">${lp.conv.toFixed(1)}</td>
+        <td class="${lp.convRate>2?'good':lp.convRate>0?'ok':'bad'}">${lp.convRate.toFixed(1)}%</td>
+        <td><span style="font-size:11px;font-weight:700;color:${lp.needsFix?'var(--red)':'var(--teal)'}">${lp.needsFix?'⚠ Fix page':'✓ OK'}</span></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Device breakdown
+  const devEl = document.getElementById('device-breakdown');
+  if(devEl && ad.devices?.length) {
+    const devMap = {};
+    ad.devices.forEach(d => {
+      const key = d.device;
+      if(!devMap[key]) devMap[key]={device:key,cost:0,conv:0,clicks:0};
+      devMap[key].cost+=d.cost; devMap[key].conv+=d.conv; devMap[key].clicks+=d.clicks;
+    });
+    const devIcon = {MOBILE:'📱',DESKTOP:'💻',TABLET:'📱'};
+    devEl.innerHTML = Object.values(devMap).filter(d=>d.cost>0).map(d => {
+      const cr = d.clicks>0?(d.conv/d.clicks*100):0;
+      const cpa = d.conv>0?(d.cost/d.conv):0;
+      return `<div class="metric">
+        <div style="font-size:20px;margin-bottom:6px">${devIcon[d.device]||'📱'}</div>
+        <div class="metric-val green">£${d.cost.toFixed(0)}</div>
+        <div class="metric-lbl">${d.device?.toLowerCase()||'unknown'}</div>
+        <div class="metric-sub">${d.conv.toFixed(0)} conv · ${cr.toFixed(1)}% rate${cpa>0?' · CPA £'+cpa.toFixed(2):''}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Wasted spend from search terms
+  const wasted = (ad.searchTerms||[]).filter(t=>t.wasted).sort((a,b)=>b.cost-a.cost).slice(0,15);
+  if(wasted.length) {
+    document.getElementById('wasted-spend-section').style.display='block';
+    const totalW = wasted.reduce((s,t)=>s+t.cost,0);
+    document.getElementById('wasted-spend-content').innerHTML=`
+      <div style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:8px">£${totalW.toFixed(2)} wasted on top ${wasted.length} zero-conversion terms</div>
+      ${wasted.map(t=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;flex-wrap:wrap;gap:6px">
+        <span class="kw">"${t.term}"</span>
+        <span style="font-size:11px;color:var(--ink3)">${t.adGroup}</span>
+        <span style="font-weight:700;color:var(--red)">£${t.cost.toFixed(2)}</span>
+        <span style="font-size:10px;background:var(--red-bg);color:var(--red);padding:2px 7px;border-radius:4px">Search Terms → tick → Negative → Campaign</span>
+      </div>`).join('')}`;
+  }
+
+  // Budget split
+  const totalS = ad.totalSpend||1;
+  const spendEl = document.getElementById('spend-split');
+  if(spendEl) {
+    spendEl.innerHTML=(ad.campaigns||[]).map(c=>`
+      <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:0.5px solid var(--border)">
+        <span>${c.name}</span><span><strong>${fmtGbp(c.cost)}</strong> (${(c.cost/totalS*100).toFixed(0)}%)</span>
+      </div>`).join('');
+  }
+  const recEl = document.getElementById('recommended-split');
+  if(recEl) {
+    const goodCamps=(ad.campaigns||[]).filter(c=>c.conversions>0).sort((a,b)=>a.cpa-b.cpa);
+    const goodTotal=goodCamps.reduce((s,c)=>s+c.cost,0)||1;
+    recEl.innerHTML=goodCamps.length?goodCamps.map(c=>`
+      <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:0.5px solid var(--border)">
+        <span>${c.name}</span><span style="color:var(--teal)"><strong>${fmtGbp(ad.totalSpend*(c.cost/goodTotal))}</strong> recommended</span>
+      </div>`).join(''):'<div style="color:var(--ink3);font-size:12px">No converting campaigns yet</div>';
+  }
+}
+
 
 // ── BRAND INTELLIGENCE ─────────────────────────────────────────────────────
 function renderBrandIntelligence(searchTermsData) {
   const el = document.getElementById('brand-intelligence-grid');
   if(!el) return;
+  document.getElementById('brand-intel-wrapper').style.display='block';
 
   const brands = {
     'ORS': ['ors ','ors shampoo','ors relaxer','ors olive','ors curls'],
@@ -1768,6 +1980,7 @@ function renderBrandIntelligence(searchTermsData) {
 function renderCollectionOffers(searchTermsData) {
   const el = document.getElementById('collection-offers-grid');
   if(!el) return;
+  document.getElementById('coll-offers-wrapper').style.display='block';
 
   const collections = [
     {name:'Hair Dye & Colour', terms:['hair dye','hair colour','hair color','garnier','schwarzkopf dye','wella','loreal dye','colour creme','midnight blue','casting'], code:'COLOUR10', pct:'10%'},
@@ -1827,6 +2040,7 @@ function renderCollectionOffers(searchTermsData) {
 function renderNegativeKeywords(searchTermsData) {
   const el = document.getElementById('negative-kw-section');
   if(!el) return;
+  document.getElementById('neg-kw-wrapper').style.display='block';
 
   const supermarketTerms = ['mustard oil','olive oil','coconut oil','baby oil','e45','st ives','nivea soft','nivea lotion','nivea moistur',
     'head and shoulders','pantene','garnier shampoo','elvive','dove shampoo','dove conditioner','apple cider vinegar','t gel shampoo'];
