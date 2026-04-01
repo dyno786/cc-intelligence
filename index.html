@@ -316,6 +316,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
     <button class="tab-btn" id="tab-studio" onclick="showTab('studio',this)"><span>✂ Content Studio</span></button>
     <button class="tab-btn" id="tab-seo" onclick="showTab('seo',this);loadSeoAudit()"><span>🔎 SEO Audit</span></button>
     <button class="tab-btn" id="tab-stock" onclick="showTab('stock',this)"><span>📦 Stock Intel</span></button>
+    <button class="tab-btn" id="tab-actlog" onclick="showTab('actlog',this);renderActivityLog()"><span>📋 Activity Log</span></button>
   </div>
 
   <!-- OVERVIEW TAB -->
@@ -969,6 +970,46 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
           <button class="copy-btn" onclick="generateStockRecommendations()">Generate</button>
         </div>
         <div class="ai-card-body" id="stock-ai-body">Click Generate to get AI reorder priorities based on sales velocity and stock levels.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- ACTIVITY LOG TAB -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div class="screen" id="screen-actlog">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+      <div>
+        <div class="sec-title" style="margin:0">📋 Activity Log</div>
+        <p style="font-size:12px;color:var(--ink3);margin-top:4px">Every action — SEO pushes, content generated, errors — logged here with timestamps.</p>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="copy-btn-dk" onclick="exportActivityLog()">⬇ Export</button>
+        <button class="copy-btn-dk" onclick="if(confirm('Clear all log entries?')){localStorage.removeItem('cc_activity_log');renderActivityLog();toast('Cleared')}" style="border-color:var(--red);color:var(--red)">🗑 Clear</button>
+      </div>
+    </div>
+
+    <!-- Summary cards -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px" id="actlog-summary">
+      <div class="metric"><div class="metric-val green" id="al-pushes">0</div><div class="metric-lbl">SEO Pushes</div><div class="metric-sub">Saved to Shopify</div></div>
+      <div class="metric"><div class="metric-val" id="al-content">0</div><div class="metric-lbl">Content Generated</div><div class="metric-sub">Blogs & social</div></div>
+      <div class="metric"><div class="metric-val red" id="al-errors">0</div><div class="metric-lbl">Errors</div><div class="metric-sub">Click to see details</div></div>
+      <div class="metric"><div class="metric-val" id="al-total">0</div><div class="metric-lbl">Total Actions</div><div class="metric-sub">All time</div></div>
+    </div>
+
+    <!-- Filter pills -->
+    <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px">
+      <button class="studio-pill active" onclick="renderActivityLog('all',this)">All</button>
+      <button class="studio-pill" onclick="renderActivityLog('seo_push',this)">🚀 SEO Pushes</button>
+      <button class="studio-pill" onclick="renderActivityLog('content',this)">✍ Content</button>
+      <button class="studio-pill" onclick="renderActivityLog('error',this)">❌ Errors</button>
+    </div>
+
+    <div id="actlog-body">
+      <div style="text-align:center;padding:40px;color:var(--ink3)">
+        <div style="font-size:32px;margin-bottom:8px">📋</div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:4px">No activity yet</div>
+        <div style="font-size:12px">Actions will be logged here automatically as you use the dashboard</div>
       </div>
     </div>
   </div>
@@ -2363,27 +2404,46 @@ function studioSugTab(tab, btn) {
     });
 
   } else if(tab === 'keywords') {
-    // Match Search Console keywords to products
     const sc = liveData.sc;
     if(!sc || (!sc.lowCTR?.length && !sc.nearPage1?.length)) {
       g.innerHTML = '<div style="text-align:center;padding:24px;color:var(--ink3);font-size:13px;background:var(--card);border-radius:var(--r2)">Search Console data needed — it loads automatically when you refresh the dashboard</div>';
       return;
     }
-    const keywords = [...(sc.lowCTR||[]).slice(0,10), ...(sc.nearPage1||[]).slice(0,8)];
+    // Deduplicate by query string — lowCTR and nearPage1 often contain same keywords
+    const seen = new Set();
+    const allKws = [...(sc.lowCTR||[]), ...(sc.nearPage1||[])];
+    const keywords = allKws.filter(kw => {
+      const q = (kw.query||kw.q||'').toLowerCase().trim();
+      if(!q || seen.has(q)) return false;
+      seen.add(q); return true;
+    }).slice(0, 18);
+
     g.style.display = 'block';
     g.innerHTML = '';
     keywords.forEach(kw => {
       const q = kw.query || kw.q || '';
-      // Find matching products
+      const ql = q.toLowerCase().trim();
+
+      // Strict matching: ALL significant words in keyword must appear in product title
+      // OR product title contains the full keyword phrase
+      const kwWords = ql.split(/\s+/).filter(w => w.length > 2);
       const matches = studioProds.filter(p => {
         const pl = (p.title||'').toLowerCase();
-        const ql = q.toLowerCase();
-        return ql.split(' ').some(word => word.length > 3 && pl.includes(word));
+        const vendor = (p.vendor||'').toLowerCase();
+        const tags = (p.tags||'').toLowerCase();
+        // Full phrase match (strongest)
+        if(pl.includes(ql)) return true;
+        // Brand/vendor match + at least one other word
+        if(kwWords.length >= 2) {
+          const vendorMatch = kwWords.some(w => vendor.includes(w) || pl.startsWith(w));
+          const otherWords = kwWords.filter(w => !vendor.includes(w));
+          return vendorMatch && otherWords.every(w => pl.includes(w) || tags.includes(w));
+        }
+        // Single distinctive word — must be 5+ chars to avoid false matches
+        return kwWords.some(w => w.length >= 5 && pl.includes(w));
       }).slice(0, 2);
 
       const ctrColor = kw.ctr < 1 ? 'var(--red)' : kw.ctr < 2 ? 'var(--yellow2)' : 'var(--teal)';
-      const isLowCTR = (kw.impressions||kw.impr||0) > 200 && kw.ctr < 2;
-
       const row = document.createElement('div');
       row.style.cssText = 'background:var(--card);border-radius:var(--r2);padding:12px 14px;margin-bottom:8px;box-shadow:var(--shadow)';
       row.innerHTML = `
@@ -2392,9 +2452,9 @@ function studioSugTab(tab, btn) {
             <div style="font-size:13px;font-weight:700;color:var(--ink)">"${q}"</div>
             <div style="font-size:11px;color:var(--ink3);margin-top:2px">${(kw.impressions||kw.impr||0).toLocaleString()} impressions · <span style="color:${ctrColor};font-weight:700">${(kw.ctr||0).toFixed(2)}% CTR</span> · pos ${(kw.position||kw.pos||0).toFixed(1)}</div>
           </div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap">
-            ${matches.length ? matches.map(p=>`<button onclick="studioSelectProdAndKeyword(${JSON.stringify({id:p.id,title:p.title,price:p.price||'',image:p.image||'',handle:p.handle||'',vendor:p.vendor||'',productType:p.productType||'',tags:p.tags||'',description:p.description||''}).replace(/"/g,'&quot;')},'${q.replace(/'/g,"\\'")}');" style="background:var(--teal-light);color:var(--teal);border:1px solid var(--teal);border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.title}">🛍 ${p.title.substring(0,25)}${p.title.length>25?'…':''}</button>`).join('') : ''}
-            <button onclick="openStudio('${q.replace(/'/g,"\\'")}');" style="background:var(--teal);color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">✍ Write Blog →</button>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+            ${matches.length ? matches.map(p=>`<button onclick="studioSelectProdAndKeyword(${JSON.stringify({id:p.id,title:p.title,price:p.price||'',image:p.image||'',handle:p.handle||'',vendor:p.vendor||'',productType:p.productType||'',tags:p.tags||'',description:p.description||''}).replace(/"/g,'&quot;')},'${q.replace(/'/g,"\\'")}');" style="background:var(--teal-light);color:var(--teal);border:1px solid var(--teal);border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.title}">🛍 ${p.title.substring(0,22)}${p.title.length>22?'…':''}</button>`).join('') : `<span style="font-size:10px;color:var(--ink3);font-style:italic">no exact product match</span>`}
+            <button onclick="openStudio('${q.replace(/'/g,"\\'")}');" style="background:var(--teal);color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">✍ Write Blog →</button>
           </div>
         </div>`;
       g.appendChild(row);
@@ -2479,17 +2539,23 @@ function studioMatchKeyword(q) {
     if(el) el.style.display = 'none';
     return;
   }
-  const ql = q.toLowerCase();
-  const words = ql.split(' ').filter(w=>w.length>3);
+  const ql = q.toLowerCase().trim();
+  const kwWords = ql.split(/\s+/).filter(w => w.length > 2);
+
   const matches = studioProds.filter(p => {
     const pl = (p.title||'').toLowerCase();
-    return words.some(w => pl.includes(w)) || pl.includes(ql);
-  }).slice(0,6);
+    const vendor = (p.vendor||'').toLowerCase();
+    const tags = (p.tags||'').toLowerCase();
+    if(pl.includes(ql)) return true;
+    if(kwWords.length >= 2) {
+      return kwWords.filter(w=>w.length>3).every(w => pl.includes(w) || vendor.includes(w) || tags.includes(w));
+    }
+    return kwWords.some(w => w.length >= 5 && pl.includes(w));
+  }).slice(0, 5);
 
   const el = document.getElementById('sk-matched-products');
   const list = document.getElementById('sk-matched-list');
   if(!el || !list) return;
-
   if(!matches.length) { el.style.display = 'none'; return; }
   el.style.display = 'block';
   list.innerHTML = matches.map(p =>
@@ -2818,7 +2884,7 @@ async function studioGenProduct() {
       ])+
       (c.menu_tags?.length?`<div style="background:var(--card);border-radius:var(--r2);padding:12px 14px;box-shadow:var(--shadow);margin-bottom:12px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ink3);margin-bottom:8px">Shopify Tags</div><div style="display:flex;flex-wrap:wrap;gap:5px">${(Array.isArray(c.menu_tags)?c.menu_tags:String(c.menu_tags).split(',')).map(t=>`<span style="font-size:12px;background:var(--teal-light);border:1px solid var(--teal);color:var(--teal);border-radius:20px;padding:3px 12px;font-weight:600">${t.trim()}</span>`).join('')}</div></div>`:'');
 
-    toast('Content generated ✓','success');
+    toast('Content generated ✓','success'); actLog('content','Product blog generated: '+(studioSelProd?.title||''),'Blog + GBP + social + review request');
 
     // Generate AI images in background if OpenAI key exists and product has image
     if(hasOpenAI && p.image) {
@@ -2829,7 +2895,7 @@ async function studioGenProduct() {
     document.getElementById('studio-prod-loading').style.display='none';
     document.getElementById('studio-sel-bar').style.display='flex';
     document.getElementById('studio-prod-btn').style.display='flex';
-    toast('Error: '+e.message,'error');
+    toast('Error: '+e.message,'error'); actLog('error','Error: '+e.message.substring(0,80),'See details in console');
   }
 }
 
@@ -2868,11 +2934,11 @@ async function studioGenKeyword() {
       studioResultSec('📱 Social Media',[
         {label:'Instagram Caption',content:c.instagram_caption},{label:'Instagram Hashtags',content:c.instagram_hashtags},{label:'Facebook Post',content:c.facebook_post},
       ]);
-    toast('Keyword blog generated ✓','success');
+    toast('Keyword blog generated ✓','success'); actLog('content','Keyword blog: "'+document.getElementById('sk-keyword')?.value+'"','Full SEO blog + GBP + social captions');
   } catch(e) {
     clearInterval(iv);
     document.getElementById('sk-loading').style.display='none';
-    toast('Error: '+e.message,'error');
+    toast('Error: '+e.message,'error'); actLog('error','Error: '+e.message.substring(0,80),'See details in console');
   }
 }
 
@@ -2909,10 +2975,10 @@ async function studioGenCollection() {
       studioResultSec('📱 Social & Email',[
         {label:'Instagram Caption',content:c.instagram_caption},{label:'Instagram Hashtags',content:c.instagram_hashtags},{label:'Facebook Post',content:c.facebook_post},{label:'Email Subject',content:c.email_subject},{label:'Email Preview Text',content:c.email_preview},
       ]);
-    toast('Collection content generated ✓','success');
+    toast('Collection content generated ✓','success'); actLog('content','Collection SEO: '+name,'Meta title + description + GBP posts + social');
   } catch(e) {
     document.getElementById('sc-loading').style.display='none';
-    toast('Error: '+e.message,'error');
+    toast('Error: '+e.message,'error'); actLog('error','Error: '+e.message.substring(0,80),'See details in console');
   }
 }
 
@@ -2937,10 +3003,10 @@ async function studioGenSocial() {
       studioResultSec('📱 Social & WhatsApp',[
         {label:'Instagram Caption',content:c.instagram_caption},{label:'Instagram Hashtags (first comment)',content:c.instagram_hashtags},{label:'Facebook Post',content:c.facebook_post},{label:'WhatsApp Broadcast',content:c.whatsapp_broadcast},
       ]);
-    toast('Social posts generated ✓','success');
+    toast('Social posts generated ✓','success'); actLog('content','Social posts generated','Instagram + Facebook + GBP + WhatsApp');
   } catch(e) {
     document.getElementById('so-loading').style.display='none';
-    toast('Error: '+e.message,'error');
+    toast('Error: '+e.message,'error'); actLog('error','Error: '+e.message.substring(0,80),'See details in console');
   }
 }
 
@@ -3194,6 +3260,7 @@ async function studioPushSEOConfirm(key) {
     const result = await r.json();
 
     if(result.scopeError || (result.error && result.error.includes('SCOPE_ERROR'))) {
+      actLog('seo_error', `SEO push failed: ${d.name}`, 'Missing Shopify API scopes (write_products or write_content). Go to Shopify Admin → Apps → Develop apps → Configuration → add scopes.', {shopifyId:d.id,shopifyType:d.type});
       // Show scope error inside modal with clear instructions
       if(errorEl) {
         errorEl.innerHTML = `<strong>⚠ Shopify token needs more permissions:</strong><br><br>
@@ -3218,6 +3285,7 @@ async function studioPushSEOConfirm(key) {
     if(skippedFields) msg += ` (${skippedFields} skipped)`;
     if(result.errors?.length) msg += ` | Some warnings: ${result.errors[0].substring(0,80)}`;
     toast(msg, 'success');
+    actLog('seo_push', `SEO updated: ${d.name}`, `Fields: ${updatedFields||'none'}${skippedFields?' | Skipped: '+skippedFields:''}${result.errors?.length?' | Warning: '+result.errors[0].substring(0,100):''}`, {shopifyId:d.id,shopifyType:d.type});
 
     const pushBtn = document.getElementById('pushbtn-'+key);
     if(pushBtn) {
@@ -3398,7 +3466,100 @@ function exportSeoAudit() {
   URL.revokeObjectURL(url);toast('Exported ✓','success');
 }
 
-// ── STOCK INTELLIGENCE ────────────────────────────────────────────────────────
+// ── ACTIVITY LOG ─────────────────────────────────────────────────────────────
+const AL_TYPES = {
+  seo_push:    { icon:'🚀', label:'SEO Push',       color:'var(--teal)' },
+  seo_error:   { icon:'❌', label:'SEO Error',      color:'var(--red)' },
+  content:     { icon:'✍',  label:'Content',         color:'var(--blue)' },
+  error:       { icon:'⚠',  label:'Error',           color:'var(--red)' },
+  info:        { icon:'ℹ',  label:'Info',            color:'var(--ink3)' },
+};
+
+function actLog(type, title, detail='', meta={}) {
+  const log = actGetLog();
+  log.unshift({
+    id: Date.now(),
+    ts: new Date().toISOString(),
+    type, title, detail,
+    ...meta,
+  });
+  if(log.length > 500) log.pop();
+  try { localStorage.setItem('cc_activity_log', JSON.stringify(log)); } catch(e){}
+  // Update badge on tab
+  const tab = document.getElementById('tab-actlog');
+  if(tab && type === 'error' || type === 'seo_error') {
+    tab.querySelector('span').textContent = '📋 Activity Log ⚠';
+  }
+}
+
+function actGetLog() {
+  try { return JSON.parse(localStorage.getItem('cc_activity_log')||'[]'); } catch{ return []; }
+}
+
+function renderActivityLog(filter='all', btn) {
+  if(btn) {
+    document.querySelectorAll('#screen-actlog .studio-pill').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  const log = actGetLog();
+  const filtered = filter==='all' ? log : log.filter(e => {
+    if(filter==='error') return e.type==='error'||e.type==='seo_error';
+    if(filter==='seo_push') return e.type==='seo_push';
+    if(filter==='content') return e.type==='content';
+    return true;
+  });
+
+  // Update summary
+  const pushes = log.filter(e=>e.type==='seo_push').length;
+  const content = log.filter(e=>e.type==='content').length;
+  const errors = log.filter(e=>e.type==='error'||e.type==='seo_error').length;
+  const els = {
+    'al-pushes': pushes, 'al-content': content,
+    'al-errors': errors, 'al-total': log.length,
+  };
+  Object.entries(els).forEach(([id,v])=>{ const el=document.getElementById(id); if(el) el.textContent=v; });
+
+  const body = document.getElementById('actlog-body');
+  if(!body) return;
+
+  if(!filtered.length) {
+    body.innerHTML = `<div style="text-align:center;padding:40px;color:var(--ink3)"><div style="font-size:32px;margin-bottom:8px">📋</div><div style="font-size:14px;font-weight:600;margin-bottom:4px">No ${filter==='all'?'activity':filter} yet</div></div>`;
+    return;
+  }
+
+  body.innerHTML = filtered.map(e => {
+    const t = AL_TYPES[e.type] || AL_TYPES.info;
+    const dt = new Date(e.ts);
+    const timeStr = dt.toLocaleDateString('en-GB',{day:'numeric',month:'short'}) + ' ' + dt.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    const isError = e.type==='error'||e.type==='seo_error';
+    return `<div style="background:var(--card);border-radius:var(--r2);padding:12px 14px;margin-bottom:8px;box-shadow:var(--shadow);border-left:3px solid ${t.color};${isError?'border-color:var(--red)':''}">
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <div style="font-size:18px;flex-shrink:0;margin-top:1px">${t.icon}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <div style="font-size:13px;font-weight:700;color:var(--ink)">${e.title}</div>
+            <span style="font-size:10px;font-weight:700;background:${isError?'var(--red-bg)':'var(--teal-light)'};color:${t.color};border-radius:20px;padding:1px 8px">${t.label}</span>
+          </div>
+          ${e.detail ? `<div style="font-size:12px;color:var(--ink2);margin-top:4px;word-break:break-word">${e.detail}</div>` : ''}
+          ${e.shopifyId ? `<div style="font-size:11px;color:var(--ink3);margin-top:3px">Shopify ID: ${e.shopifyId} · ${e.shopifyType||''}</div>` : ''}
+        </div>
+        <div style="font-size:11px;color:var(--ink3);flex-shrink:0;text-align:right;white-space:nowrap">${timeStr}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function exportActivityLog() {
+  const log = actGetLog();
+  if(!log.length){toast('No activity to export','error');return;}
+  const rows = [['Timestamp','Type','Title','Detail'].join('\t'),
+    ...log.map(e=>[new Date(e.ts).toLocaleString('en-GB'),e.type,e.title,e.detail||''].join('\t'))
+  ].join('\n');
+  const blob = new Blob([rows],{type:'text/tab-separated-values'});
+  const url = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href=url; a.download=`cc-activity-${new Date().toISOString().substring(0,10)}.tsv`; a.click();
+  URL.revokeObjectURL(url); toast('Exported ✓','success');
+}
 let stockData = [];
 let stockFiltered = [];
 
@@ -3567,7 +3728,7 @@ Keep it practical and actionable. Under 300 words.`;
     toast('Stock recommendations generated ✓','success');
   } catch(e) {
     bodyEl.textContent='Error: '+e.message;
-    toast('Error: '+e.message,'error');
+    toast('Error: '+e.message,'error'); actLog('error','Error: '+e.message.substring(0,80),'See details in console');
   }
 }
 
