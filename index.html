@@ -3065,15 +3065,17 @@ async function studioPushSEOModal(key) {
   if(btn) { btn.textContent = 'Loading current…'; btn.disabled = true; }
 
   // Fetch current SEO from Shopify first
-  let current = { seoTitle:'', seoDescription:'' };
+  let current = { seoTitle:'', seoDescription:'', collType: null };
   try {
     const r = await fetch(`/api/shopify-seo?domain=${s.shop}&token=${s.token}&type=${d.type}&id=${d.id}`);
     if(r.ok) current = await r.json();
   } catch(e) {}
 
+  // Store collType for the confirm step
+  window[key].collType = current.collType;
+
   if(btn) { btn.textContent = 'Review & Push to Shopify →'; btn.disabled = false; }
 
-  // Build comparison modal
   const hasExisting = !!(current.seoTitle || current.seoDescription);
   const modal = document.createElement('div');
   modal.id = 'seo-push-modal';
@@ -3089,42 +3091,39 @@ async function studioPushSEOModal(key) {
       </div>
       <div style="padding:20px 24px">
 
-        ${hasExisting ? `<div style="background:var(--yellow-bg);border:1px solid var(--yellow2);border-radius:var(--r);padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--ink2)">
-          ⚠ This ${d.type} already has SEO data. Review carefully before overwriting.
-        </div>` : `<div style="background:var(--teal-light);border:1px solid var(--teal);border-radius:var(--r);padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--teal)">
-          ✓ No existing SEO data — safe to add new content.
-        </div>`}
+        ${hasExisting
+          ? `<div style="background:var(--yellow-bg);border:1px solid var(--yellow2);border-radius:var(--r);padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--ink2)">⚠ This ${d.type} already has SEO data. Review carefully before overwriting.</div>`
+          : `<div style="background:var(--teal-light);border:1px solid var(--teal);border-radius:var(--r);padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--teal)">✓ No existing SEO data — safe to add new content.</div>`
+        }
 
-        <!-- Meta Title -->
         <div style="margin-bottom:16px">
           <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);margin-bottom:8px">Meta Title</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
             <div>
               <div style="font-size:10px;font-weight:700;color:var(--ink3);margin-bottom:4px">CURRENT IN SHOPIFY</div>
               <div style="background:var(--card2);border:1.5px solid var(--border2);border-radius:var(--r);padding:10px;font-size:12px;color:${current.seoTitle?'var(--ink)':'var(--ink3)'};min-height:42px">${current.seoTitle || '<em>None set</em>'}</div>
-              ${current.seoTitle?`<div style="font-size:10px;color:var(--ink3);margin-top:3px">${current.seoTitle.length} chars</div>`:''}
+              ${current.seoTitle?`<div style="font-size:10px;color:${current.seoTitle.length>60?'var(--red)':'var(--ink3)'};margin-top:3px">${current.seoTitle.length} chars${current.seoTitle.length>60?' ⚠ too long':''}</div>`:''}
             </div>
             <div>
               <div style="font-size:10px;font-weight:700;color:var(--teal);margin-bottom:4px">NEW (AI GENERATED)</div>
               <textarea id="spm-title" style="width:100%;background:var(--teal-light);border:1.5px solid var(--teal);border-radius:var(--r);padding:10px;font-size:12px;font-family:inherit;color:var(--ink);resize:vertical;min-height:42px;outline:none">${d.metaTitle}</textarea>
-              <div id="spm-title-len" style="font-size:10px;color:var(--teal);margin-top:3px">${d.metaTitle.length}/60 chars</div>
+              <div id="spm-title-len" style="font-size:10px;color:${d.metaTitle.length>60?'var(--red)':'var(--teal)'};margin-top:3px">${d.metaTitle.length}/60 chars</div>
             </div>
           </div>
         </div>
 
-        <!-- Meta Description -->
         <div style="margin-bottom:16px">
           <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);margin-bottom:8px">Meta Description</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
             <div>
               <div style="font-size:10px;font-weight:700;color:var(--ink3);margin-bottom:4px">CURRENT IN SHOPIFY</div>
               <div style="background:var(--card2);border:1.5px solid var(--border2);border-radius:var(--r);padding:10px;font-size:12px;color:${current.seoDescription?'var(--ink)':'var(--ink3)'};min-height:60px">${current.seoDescription || '<em>None set</em>'}</div>
-              ${current.seoDescription?`<div style="font-size:10px;color:var(--ink3);margin-top:3px">${current.seoDescription.length} chars</div>`:''}
+              ${current.seoDescription?`<div style="font-size:10px;color:${current.seoDescription.length>155?'var(--red)':'var(--ink3)'};margin-top:3px">${current.seoDescription.length} chars${current.seoDescription.length>155?' ⚠ too long':''}</div>`:''}
             </div>
             <div>
               <div style="font-size:10px;font-weight:700;color:var(--teal);margin-bottom:4px">NEW (AI GENERATED)</div>
               <textarea id="spm-desc" style="width:100%;background:var(--teal-light);border:1.5px solid var(--teal);border-radius:var(--r);padding:10px;font-size:12px;font-family:inherit;color:var(--ink);resize:vertical;min-height:60px;outline:none">${d.metaDesc}</textarea>
-              <div id="spm-desc-len" style="font-size:10px;color:var(--teal);margin-top:3px">${d.metaDesc.length}/155 chars</div>
+              <div id="spm-desc-len" style="font-size:10px;color:${d.metaDesc.length>155?'var(--red)':'var(--teal)'};margin-top:3px">${d.metaDesc.length}/155 chars</div>
             </div>
           </div>
         </div>
@@ -3133,11 +3132,14 @@ async function studioPushSEOModal(key) {
         <div style="margin-bottom:16px">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600">
             <input type="checkbox" id="spm-body-check" checked style="width:16px;height:16px;accent-color:var(--teal)">
-            Also update collection page description (SEO body text)
+            Also update ${d.type} page description (SEO body text)
+            ${current.collType==='smart'?'<span style="font-size:10px;color:var(--yellow2);font-weight:400">(smart collections may not support this)</span>':''}
           </label>
         </div>` : ''}
 
-        <div style="display:flex;gap:10px;margin-top:4px">
+        <div id="spm-error" style="display:none;background:var(--red-bg);border:1px solid var(--red);border-radius:var(--r);padding:10px 14px;margin-bottom:12px;font-size:12px;color:var(--red)"></div>
+
+        <div style="display:flex;gap:10px">
           <button onclick="document.getElementById('seo-push-modal').remove()" style="flex:1;background:var(--card2);color:var(--ink2);border:1.5px solid var(--border2);border-radius:var(--r);padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Cancel</button>
           <button onclick="studioPushSEOConfirm('${key}')" id="spm-confirm-btn" style="flex:2;background:var(--teal);color:#fff;border:none;border-radius:var(--r);padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">
             ✓ ${hasExisting?'Overwrite':'Save'} to Shopify Now
@@ -3149,14 +3151,15 @@ async function studioPushSEOModal(key) {
 
   document.body.appendChild(modal);
 
-  // Live char counters
   document.getElementById('spm-title').addEventListener('input', function() {
-    document.getElementById('spm-title-len').textContent = this.value.length+'/60 chars';
-    document.getElementById('spm-title-len').style.color = this.value.length > 60 ? 'var(--red)' : 'var(--teal)';
+    const l = document.getElementById('spm-title-len');
+    l.textContent = this.value.length+'/60 chars';
+    l.style.color = this.value.length > 60 ? 'var(--red)' : 'var(--teal)';
   });
   document.getElementById('spm-desc').addEventListener('input', function() {
-    document.getElementById('spm-desc-len').textContent = this.value.length+'/155 chars';
-    document.getElementById('spm-desc-len').style.color = this.value.length > 155 ? 'var(--red)' : 'var(--teal)';
+    const l = document.getElementById('spm-desc-len');
+    l.textContent = this.value.length+'/155 chars';
+    l.style.color = this.value.length > 155 ? 'var(--red)' : 'var(--teal)';
   });
 }
 
@@ -3170,10 +3173,17 @@ async function studioPushSEOConfirm(key) {
   const includeBody = document.getElementById('spm-body-check')?.checked;
 
   const confirmBtn = document.getElementById('spm-confirm-btn');
+  const errorEl = document.getElementById('spm-error');
   if(confirmBtn) { confirmBtn.textContent = 'Saving to Shopify…'; confirmBtn.disabled = true; }
+  if(errorEl) errorEl.style.display = 'none';
 
   try {
-    const body = { domain: s.shop, token: s.token, type: d.type, id: d.id, seoTitle: newTitle, seoDescription: newDesc };
+    const body = {
+      domain: s.shop, token: s.token,
+      type: d.type, id: d.id,
+      seoTitle: newTitle, seoDescription: newDesc,
+      collType: d.collType || null,
+    };
     if(includeBody && d.bodyHtml) body.bodyHtml = d.bodyHtml;
 
     const r = await fetch('/api/shopify-seo', {
@@ -3182,12 +3192,33 @@ async function studioPushSEOConfirm(key) {
       body: JSON.stringify(body),
     });
     const result = await r.json();
-    if(result.error) throw new Error(result.error);
+
+    if(result.scopeError || (result.error && result.error.includes('SCOPE_ERROR'))) {
+      // Show scope error inside modal with clear instructions
+      if(errorEl) {
+        errorEl.innerHTML = `<strong>⚠ Shopify token needs more permissions:</strong><br><br>
+          Go to <strong>Shopify Admin → Settings → Apps and sales channels → Develop apps → your app → Configuration</strong><br>
+          Add: <code style="background:rgba(0,0,0,.1);padding:1px 5px;border-radius:3px">write_products</code> and <code style="background:rgba(0,0,0,.1);padding:1px 5px;border-radius:3px">write_content</code><br>
+          Click Save → <strong>Rotate API token</strong> → paste new token in ⚙ Settings`;
+        errorEl.style.display = 'block';
+      }
+      if(confirmBtn) { confirmBtn.textContent = '✓ Save to Shopify Now'; confirmBtn.disabled = false; }
+      return;
+    }
+
+    if(!result.success && result.error) throw new Error(result.error);
+
+    // Show partial success if some fields updated
+    const updatedFields = (result.updated||[]).filter(u=>u.status==='updated').map(u=>u.field).join(', ');
+    const skippedFields = (result.updated||[]).filter(u=>u.status==='skipped').map(u=>u.field).join(', ');
 
     document.getElementById('seo-push-modal')?.remove();
-    toast(`✓ Shopify updated — ${result.updated?.length||0} fields saved live`, 'success');
 
-    // Update the push button to show done
+    let msg = `✓ Shopify updated — ${updatedFields || 'fields'} saved live`;
+    if(skippedFields) msg += ` (${skippedFields} skipped)`;
+    if(result.errors?.length) msg += ` | Some warnings: ${result.errors[0].substring(0,80)}`;
+    toast(msg, 'success');
+
     const pushBtn = document.getElementById('pushbtn-'+key);
     if(pushBtn) {
       pushBtn.textContent = '✓ Live in Shopify!';
@@ -3196,12 +3227,8 @@ async function studioPushSEOConfirm(key) {
       pushBtn.disabled = true;
     }
   } catch(e) {
+    if(errorEl) { errorEl.textContent = 'Error: ' + e.message; errorEl.style.display = 'block'; }
     if(confirmBtn) { confirmBtn.textContent = '✓ Save to Shopify Now'; confirmBtn.disabled = false; }
-    toast('Push failed: '+e.message, 'error');
-    // Show helpful message for scope error
-    if(e.message.includes('write_products')) {
-      alert('Your Shopify token needs write_products scope.\n\nGo to:\nShopify Admin → Settings → Apps → Develop apps → your app → Configuration → add write_products and write_content scopes → Save → rotate the token.\n\nThen update your token in ⚙ Settings.');
-    }
   }
 }
 
