@@ -1,6 +1,6 @@
 import { getValidToken } from './auth/status.js';
 
-export const config = { maxDuration: 60 };
+export const config = { maxDuration: 60, regions: ['lhr1'] };
 
 const MANAGER_ID  = '7490010943';
 const CLIENT_ID   = '3934493272';
