@@ -546,7 +546,6 @@ const PAGE_CHECKS = [
   { name:'Risk & Due Diligence', url:'/risk.html',        icon:'◉'  },
   { name:'Auction Calendar',    url:'/auctions.html',    icon:'🔨' },
   { name:'Sourcing Hub',        url:'/sourcing.html',    icon:'🔍' },
-  // (sourcing already in new_pages above)     icon:'🔍' },
   { name:'Outreach Tool',      url:'/outreach.html',     icon:'✉️' },
   { name:'Pub Monitor',        url:'/pubs.html',         icon:'🍺' },
   { name:'System Health',      url:'/health.html',       icon:'🔧' },
@@ -650,7 +649,7 @@ async function checkAPI(check) {
 
   const t0 = Date.now();
   try {
-    const r = await fetch(check.url, { signal: AbortSignal.timeout(15000) });
+    const r = await fetch(check.url, { signal: AbortSignal.timeout(8000) });
     const elapsed = Date.now() - t0;
     const d = await r.json();
     const result = check.check(d);
@@ -824,15 +823,17 @@ async function runAll() {
 
   renderSkeleton();
 
-  // Run APIs and pages in parallel
+  // Run APIs and pages in parallel — allSettled so one failure never blocks the rest
   const apiPromises  = API_CHECKS.map(c  => checkAPI(c));
   const pagePromises = PAGE_CHECKS.map((c,i) => checkPage(c, i));
-  await Promise.all([...apiPromises, ...pagePromises]);
+  await Promise.allSettled([...apiPromises, ...pagePromises]);
 
   // Update counts
-  const apiPass  = API_CHECKS.filter((_,i) => document.getElementById('chk-' + API_CHECKS[i].id)?.classList.contains('pass')).length;
-  document.getElementById('api-count').textContent   = `${results.pass} / ${API_CHECKS.length + PAGE_CHECKS.length}`;
-  document.getElementById('pages-count').textContent = `${PAGE_CHECKS.length} pages checked`;
+  const apiPass  = API_CHECKS.filter(c => document.getElementById('chk-' + c.id)?.classList.contains('pass')).length;
+  const apiTotal = API_CHECKS.length;
+  const pgPass   = PAGE_CHECKS.filter((_,i) => document.getElementById('page-' + i)?.classList.contains('pass')).length;
+  document.getElementById('api-count').textContent   = `${apiPass} / ${apiTotal}`;
+  document.getElementById('pages-count').textContent = `${pgPass} / ${PAGE_CHECKS.length} pages`;
 
   updateBanner();
   document.getElementById('run-btn').disabled = false;
