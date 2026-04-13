@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<meta name="theme-color" content="#0c0f1a">
+<title>Dashboard — CC Property Intel</title>
+<style>
+/* ═══════════════════════════════════════
+   CC PROPERTY INTEL — SHARED STYLES v2
+   ═══════════════════════════════════════ */
+:root {
+  --bg:       #0c0f1a;
+  --surface:  #131728;
+  --surface2: #191e32;
+  --surface3: #1f253d;
+  --border:   rgba(255,255,255,0.08);
+  --border2:  rgba(255,255,255,0.16);
+
+  --gold:     #d4a843;
+  --gold2:    #f0c060;
+  --gold-dim: rgba(212,168,67,0.12);
+  --gold-border: rgba(212,168,67,0.35);
+
+  --white:    #f0eeea;
+  --text:     #e8e6e0;
+  --muted:    #9098b4;
+  --muted2:   #606888;
+
+  --green:    #22c55e;
+  --green-dim:rgba(34,197,94,0.12);
+  --red:      #ef4444;
+  --red-dim:  rgba(239,68,68,0.12);
+  --amber:    #f59e0b;
+  --amber-dim:rgba(245,158,11,0.12);
+  --blue:     #3b82f6;
+  --blue-dim: rgba(59,130,246,0.12);
+  --purple:   #a855f7;
+  --purple-dim:rgba(168,85,247,0.12);
+  --teal:     #14b8a6;
+  --teal-dim: rgba(20,184,166,0.12);
+
+  --r:  12px;
+  --r2:  8px;
+  --r3:  6px;
+
+  --font: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --font-size: 15px;
+  --line-height: 1.6;
+}
+
+/* RESET */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; font-size:var(--font-size); }
+body {
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font);
+  font-size:1rem;
+  line-height:var(--line-height);
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ── NAVIGATION ── */
+.topnav {
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  position:sticky; top:0; z-index:200;
+  display:flex; align-items:center;
+  padding:0 16px;
+  min-height:56px;
+  gap:12px;
+}
+.nav-left { display:flex; align-items:center; flex-shrink:0; }
+.nav-brand { display:flex; align-items:center; gap:10px; text-decoration:none; }
+.nav-logo {
+  width:36px; height:36px; border-radius:8px;
+  background:var(--gold); color:#0c0f1a;
+  font-size:14px; font-weight:900; letter-spacing:0.5px;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+.nav-name { font-size:15px; font-weight:700; color:var(--white); line-height:1; }
+.nav-sub  { font-size:10px; color:var(--muted); margin-top:1px; }
+.nav-brand-text { display:flex; flex-direction:column; }
+
+/* Hamburger */
+.nav-hamburger {
+  display:none; background:none; border:1px solid var(--border);
+  color:var(--muted); font-size:20px; cursor:pointer;
+  padding:4px 10px; border-radius:var(--r3);
+  margin-left:auto;
+}
+.nav-hamburger:hover { color:var(--gold); border-color:var(--gold-border); }
+
+/* Nav links */
+.nav-links {
+  display:flex; align-items:center; gap:2px;
+  overflow-x:auto; flex:1;
+  scrollbar-width:none; padding:8px 0;
+}
+.nav-links::-webkit-scrollbar { display:none; }
+.nav-link {
+  flex-shrink:0;
+  font-size:12px; font-weight:600;
+  color:var(--muted); text-decoration:none;
+  padding:6px 10px; border-radius:var(--r3);
+  transition:all 0.15s; white-space:nowrap;
+  border:1px solid transparent;
+}
+.nav-link:hover { color:var(--white); background:var(--surface2); }
+.nav-link.active {
+  color:var(--gold); background:var(--gold-dim);
+  border-color:var(--gold-border);
+}
+
+/* Mobile nav */
+@media (max-width:768px) {
+  .nav-hamburger { display:flex; align-items:center; }
+  .nav-links {
+    display:none; position:fixed;
+    top:56px; left:0; right:0; bottom:0;
+    background:var(--surface); z-index:199;
+    flex-direction:column; align-items:stretch;
+    overflow-y:auto; padding:12px;
+    gap:4px; border-top:1px solid var(--border);
+  }
+  .nav-links.open { display:flex; }
+  .nav-link {
+    font-size:15px; padding:14px 16px;
+    border-bottom:1px solid var(--border);
+    border-radius:var(--r2);
+  }
+  .nav-link:last-child { border-bottom:none; }
+}
+
+/* ── PAGE HEADER ── */
+.page-header {
+  padding:24px 16px 0;
+  max-width:1100px; margin:0 auto;
+  display:flex; align-items:flex-start;
+  justify-content:space-between; gap:12px;
+  flex-wrap:wrap;
+}
+.page-title { font-size:clamp(20px,4vw,26px); font-weight:800; color:var(--white); margin-bottom:4px; }
+.page-sub   { font-size:13px; color:var(--muted); line-height:1.5; }
+
+/* ── CONTENT WRAPPER ── */
+.content { padding:16px 16px 80px; max-width:1100px; margin:0 auto; }
+
+/* ── CARDS ── */
+.card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--r); overflow:hidden;
+  margin-bottom:14px;
+}
+.card-hdr {
+  padding:14px 18px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+}
+.card-title { font-size:14px; font-weight:700; color:var(--white); display:flex; align-items:center; gap:8px; }
+.card-body  { padding:16px 18px; }
+
+/* ── GRID ── */
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+.grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.auto-grid-sm { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px; }
+.auto-grid-md { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
+.auto-grid-lg { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:14px; }
+@media(max-width:600px) {
+  .grid-2,.grid-3,.grid-4 { grid-template-columns:1fr; }
+}
+
+/* ── STATS ── */
+.stat-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--r2); padding:14px 16px;
+}
+.stat-val { font-size:clamp(20px,3vw,26px); font-weight:800; color:var(--gold); line-height:1; margin-bottom:4px; }
+.stat-lbl { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.6px; }
+.stat-change { font-size:12px; color:var(--muted); margin-top:3px; }
+.stat-card.green { border-color:rgba(34,197,94,0.25); }
+.stat-card.green .stat-val { color:var(--green); }
+
+/* ── BADGES ── */
+.badge { font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; text-transform:uppercase; letter-spacing:0.3px; display:inline-block; }
+.b-gold   { background:var(--gold-dim);   color:var(--gold);   border:1px solid var(--gold-border); }
+.b-green  { background:var(--green-dim);  color:var(--green);  }
+.b-red    { background:var(--red-dim);    color:var(--red);    }
+.b-amber  { background:var(--amber-dim);  color:var(--amber);  }
+.b-blue   { background:var(--blue-dim);   color:var(--blue);   }
+.b-purple { background:var(--purple-dim); color:var(--purple); }
+.b-muted  { background:var(--surface3);   color:var(--muted);  }
+
+/* ── RISK BADGES ── */
+.risk-low    { background:var(--green-dim);  color:var(--green);  font-size:12px; font-weight:700; padding:3px 10px; border-radius:8px; display:inline-block; }
+.risk-medium { background:var(--amber-dim);  color:var(--amber);  font-size:12px; font-weight:700; padding:3px 10px; border-radius:8px; display:inline-block; }
+.risk-high   { background:var(--red-dim);    color:var(--red);    font-size:12px; font-weight:700; padding:3px 10px; border-radius:8px; display:inline-block; }
+.risk-unknown{ background:var(--surface3);   color:var(--muted);  font-size:12px; font-weight:700; padding:3px 10px; border-radius:8px; display:inline-block; }
+
+/* ── FORM FIELDS ── */
+.field { margin-bottom:14px; }
+.field-label {
+  font-size:11px; font-weight:700;
+  text-transform:uppercase; letter-spacing:0.7px;
+  color:var(--muted); margin-bottom:6px; display:block;
+}
+.field-hint { font-weight:400; color:var(--muted2); }
+.field-input, .field-select, .field-textarea {
+  width:100%; background:var(--surface2);
+  border:1px solid var(--border); border-radius:var(--r2);
+  padding:11px 14px; font-size:15px; color:var(--white);
+  outline:none; font-family:var(--font);
+  transition:border-color 0.15s;
+  -webkit-appearance:none;
+}
+.field-input:focus, .field-select:focus, .field-textarea:focus { border-color:var(--gold); }
+.field-input::placeholder, .field-textarea::placeholder { color:var(--muted2); }
+.field-select { cursor:pointer; }
+.field-select option { background:var(--surface2); }
+.field-textarea { resize:vertical; min-height:80px; line-height:1.6; }
+
+/* ── BUTTONS ── */
+.btn { display:inline-flex; align-items:center; gap:6px; padding:11px 20px; border-radius:var(--r2); font-size:14px; font-weight:700; cursor:pointer; border:none; transition:all 0.15s; white-space:nowrap; font-family:var(--font); }
+.btn-gold   { background:var(--gold);     color:#0c0f1a; }
+.btn-gold:hover { background:var(--gold2); }
+.btn-ghost  { background:var(--surface2); color:var(--muted); border:1px solid var(--border); }
+.btn-ghost:hover { color:var(--white); border-color:var(--border2); }
+.btn-red    { background:var(--red-dim);  color:var(--red); border:1px solid rgba(239,68,68,0.3); }
+.btn-green  { background:var(--green-dim);color:var(--green); border:1px solid rgba(34,197,94,0.3); }
+.btn:disabled { opacity:0.5; cursor:not-allowed; }
+.btn-sm { padding:7px 14px; font-size:12px; }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,0.75);
+  z-index:500; display:flex; align-items:center;
+  justify-content:center; padding:16px;
+}
+.modal {
+  background:var(--surface); border:1px solid var(--border2);
+  border-radius:var(--r); width:100%; max-width:520px;
+  max-height:90vh; overflow-y:auto;
+}
+.modal-hdr {
+  padding:18px 20px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+  position:sticky; top:0; background:var(--surface); z-index:1;
+}
+.modal-title { font-size:16px; font-weight:700; color:var(--white); }
+.modal-close { font-size:22px; color:var(--muted); cursor:pointer; line-height:1; background:none; border:none; }
+.modal-close:hover { color:var(--white); }
+.modal-body { padding:20px; }
+.modal-footer {
+  padding:16px 20px; border-top:1px solid var(--border);
+  display:flex; gap:8px; justify-content:flex-end;
+  position:sticky; bottom:0; background:var(--surface);
+}
+
+/* ── TABLES ── */
+.data-table { width:100%; border-collapse:collapse; font-size:13px; }
+.data-table th {
+  font-size:11px; font-weight:700; text-transform:uppercase;
+  letter-spacing:0.5px; color:var(--muted);
+  padding:10px 14px; text-align:left;
+  background:var(--surface2); border-bottom:1px solid var(--border);
+}
+.data-table td { padding:11px 14px; border-top:1px solid var(--border); vertical-align:top; line-height:1.5; }
+.data-table tr:hover td { background:rgba(255,255,255,0.02); }
+.data-table a { color:var(--gold); text-decoration:none; }
+.data-table a:hover { text-decoration:underline; }
+
+/* ── ALERT BOXES ── */
+.alert { border-radius:var(--r2); padding:14px 16px; margin-bottom:14px; display:flex; gap:12px; align-items:flex-start; }
+.alert-icon { font-size:18px; flex-shrink:0; margin-top:1px; }
+.alert-body {}
+.alert-title { font-size:13px; font-weight:700; margin-bottom:3px; }
+.alert-text  { font-size:12px; line-height:1.6; color:var(--muted); }
+.alert-gold   { background:var(--gold-dim);   border:1px solid var(--gold-border); }
+.alert-gold .alert-title { color:var(--gold); }
+.alert-red    { background:var(--red-dim);    border:1px solid rgba(239,68,68,0.3); }
+.alert-red .alert-title { color:var(--red); }
+.alert-green  { background:var(--green-dim);  border:1px solid rgba(34,197,94,0.3); }
+.alert-green .alert-title { color:var(--green); }
+.alert-amber  { background:var(--amber-dim);  border:1px solid rgba(245,158,11,0.3); }
+.alert-amber .alert-title { color:var(--amber); }
+
+/* ── LOADING ── */
+.loading-spinner { display:inline-block; animation:spin 0.8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.skeleton { background:linear-gradient(90deg,var(--surface2) 25%,var(--surface3) 50%,var(--surface2) 75%); background-size:200% 100%; animation:shimmer 1.5s infinite; border-radius:var(--r2); }
+@keyframes shimmer { to { background-position:-200% 0; } }
+
+/* ── SECTION HEADER ── */
+.section-hdr { display:flex; align-items:center; justify-content:space-between; margin:20px 0 12px; flex-wrap:wrap; gap:8px; }
+.section-title { font-size:14px; font-weight:700; color:var(--white); }
+.section-sub   { font-size:12px; color:var(--muted); margin-top:2px; }
+.section-action { font-size:12px; font-weight:700; color:var(--gold); cursor:pointer; text-decoration:none; }
+.section-action:hover { text-decoration:underline; }
+
+/* ── DIVIDER ── */
+.divider { height:1px; background:var(--border); margin:16px 0; }
+
+/* ── COLOURS ── */
+.text-gold   { color:var(--gold);   }
+.text-green  { color:var(--green);  }
+.text-red    { color:var(--red);    }
+.text-amber  { color:var(--amber);  }
+.text-muted  { color:var(--muted);  }
+.text-white  { color:var(--white);  }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width:4px; height:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border2); border-radius:4px; }
+
+/* ── NAV JS ── */
+/* (toggleNav function shared inline) */
+
+
+/* INDEX SPECIFIC */
+.sentiment-banner {
+  background:linear-gradient(135deg,var(--surface2),var(--surface3));
+  border:1px solid var(--border2); border-radius:var(--r);
+  padding:20px; margin-bottom:16px;
+  display:flex; align-items:center; gap:20px; flex-wrap:wrap;
+}
+.sent-gauge { flex-shrink:0; position:relative; }
+.sent-gauge svg { display:block; transform:rotate(-90deg); }
+.sent-gauge-text { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.sent-score { font-size:28px; font-weight:900; color:var(--gold); line-height:1; }
+.sent-label { font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
+.sent-body { flex:1; min-width:200px; }
+.sent-verdict { font-size:16px; font-weight:700; color:var(--white); margin-bottom:6px; }
+.sent-desc { font-size:13px; color:var(--muted); line-height:1.6; }
+.sent-indicators { display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+.ind { background:var(--surface); border:1px solid var(--border); border-radius:var(--r3); padding:8px 12px; }
+.ind-val { font-size:16px; font-weight:700; color:var(--white); line-height:1; }
+.ind-lbl { font-size:10px; color:var(--muted); margin-top:2px; }
+
+.quick-links { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; margin-bottom:16px; }
+.ql-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r2); padding:14px; text-decoration:none; text-align:center; transition:all 0.15s; }
+.ql-card:hover { border-color:var(--gold-border); background:var(--gold-dim); transform:translateY(-1px); }
+.ql-icon { font-size:24px; margin-bottom:6px; }
+.ql-name { font-size:12px; font-weight:600; color:var(--white); }
+.ql-sub  { font-size:10px; color:var(--muted); margin-top:2px; }
+
+.news-item { padding:14px 0; border-bottom:1px solid var(--border); display:flex; gap:12px; cursor:pointer; }
+.news-item:last-child { border-bottom:none; }
+.news-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; margin-top:5px; }
+.news-body { flex:1; }
+.news-source { font-size:10px; font-weight:700; color:var(--gold); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:3px; }
+.news-title { font-size:14px; font-weight:600; color:var(--white); margin-bottom:4px; line-height:1.4; }
+.news-summary { font-size:12px; color:var(--muted); line-height:1.6; }
+.news-meta { font-size:11px; color:var(--muted2); margin-top:4px; }
+.news-tag { flex-shrink:0; font-size:10px; font-weight:700; padding:2px 8px; border-radius:6px; height:fit-content; align-self:flex-start; }
+
+.epc-item { padding:12px 0; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px; cursor:pointer; }
+.epc-item:last-child { border-bottom:none; }
+.epc-grade { width:38px; height:38px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:800; color:var(--white); flex-shrink:0; }
+.eg-g{background:#7f1d1d;} .eg-f{background:#dc2626;} .eg-e{background:#ea580c;}
+.epc-addr { font-size:13px; font-weight:600; color:var(--white); }
+.epc-meta { font-size:11px; color:var(--muted); margin-top:2px; }
+.epc-score { font-size:12px; font-weight:700; padding:3px 9px; border-radius:6px; background:var(--red-dim); color:var(--red); flex-shrink:0; }
+
+.insol-item { padding:12px 0; border-bottom:1px solid var(--border); cursor:pointer; }
+.insol-item:last-child { border-bottom:none; }
+.insol-top { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:3px; }
+.insol-name { font-size:13px; font-weight:700; color:var(--white); }
+.insol-desc { font-size:12px; color:var(--muted); line-height:1.5; margin-bottom:3px; }
+.insol-date { font-size:11px; color:var(--muted2); }
+
+</style>
+</head>
+<body>
+<nav class="topnav">
+  <div class="nav-left"><a class="nav-brand" href="/index.html">
+    <div class="nav-logo">CC</div>
+    <div class="nav-brand-text"><div class="nav-name">Property Intel</div><div class="nav-sub">CC Properties Leeds</div></div>
+  </a></div>
+  <button class="nav-hamburger" onclick="toggleNav()" id="hamburger">&#9776;</button>
+  <div class="nav-links" id="nav-links">
+    <a class="nav-link" href="/index.html">📊 Dashboard</a>
+    <a class="nav-link" href="/epc.html">⚡ EPC Finder</a>
+    <a class="nav-link" href="/news.html">📰 News</a>
+    <a class="nav-link" href="/pipeline.html">◐ Pipeline</a>
+    <a class="nav-link" href="/portfolio.html">◈ Portfolio</a>
+    <a class="nav-link" href="/risk.html">◉ Risk Check</a>
+    <a class="nav-link" href="/calculators.html">◑ Calculators</a>
+    <a class="nav-link" href="/analyser.html">🤖 AI Analyser</a>
+    <a class="nav-link" href="/sourcing.html">🔍 Sourcing</a>
+    <a class="nav-link" href="/disposals.html">🏛️ Disposals</a>
+    <a class="nav-link" href="/auctions.html">🔨 Auctions</a>
+    <a class="nav-link" href="/outreach.html">✉️ Outreach</a>
+    <a class="nav-link" href="/pubs.html">🍺 Pubs</a>
+    <a class="nav-link" href="/health.html">🔧 Health</a>
+    <a class="nav-link" href="/bmv.html">📉 BMV</a>
+    <a class="nav-link" href="/rates.html">💰 Rates</a>
+    <a class="nav-link" href="/regeneration.html">🏙️ Regen</a>
+    <a class="nav-link" href="/directmail.html">📬 Mail</a>
+    <a class="nav-link" href="/alerts.html">🔔 Alerts</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div>
+    <div class="page-title">Property Intelligence Dashboard</div>
+    <div class="page-sub">Leeds · Bradford · Yorkshire — live market data</div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+    <span class="badge b-green" style="font-size:11px;padding:4px 12px;">● Live</span>
+    <a href="/health.html" class="btn btn-ghost btn-sm">🔧 Health Check</a>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- SENTIMENT BANNER -->
+  <div class="sentiment-banner">
+    <div class="sent-gauge">
+      <svg width="90" height="90" viewBox="0 0 90 90">
+        <circle cx="45" cy="45" r="30" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="8"/>
+        <circle id="sent-arc" cx="45" cy="45" r="30" fill="none" stroke="#f59e0b" stroke-width="8"
+          stroke-dasharray="188" stroke-dashoffset="72" stroke-linecap="round"/>
+      </svg>
+      <div class="sent-gauge-text">
+        <div class="sent-score" id="sent-score">62</div>
+        <div class="sent-label">Score</div>
+      </div>
+    </div>
+    <div class="sent-body">
+      <div class="sent-verdict" id="sent-verdict">⚠️ Cautious — Good time to buy in Leeds</div>
+      <div class="sent-desc" id="sent-desc">Sellers negotiable. Rental demand strong. Refurb costs up 8% — budget carefully. Watch cashflow on BTL mortgage rates.</div>
+      <div class="sent-indicators">
+        <div class="ind"><div class="ind-val">4.5%</div><div class="ind-lbl">BOE Rate</div></div>
+        <div class="ind"><div class="ind-val">6.2%</div><div class="ind-lbl">Leeds Yield</div></div>
+        <div class="ind"><div class="ind-val">5.2%</div><div class="ind-lbl">BTL Rate</div></div>
+        <div class="ind"><div class="ind-val">£214k</div><div class="ind-lbl">Leeds Price</div></div>
+      </div>
+    </div>
+    <a href="/news.html" class="btn btn-ghost btn-sm" style="align-self:flex-start">Full Report →</a>
+  </div>
+
+  <!-- QUICK LINKS -->
+  <div class="section-hdr"><div class="section-title">Quick Access</div></div>
+  <div class="quick-links">
+    <a class="ql-card" href="/epc.html"><div class="ql-icon">⚡</div><div class="ql-name">EPC Finder</div><div class="ql-sub">Motivated sellers</div></a>
+    <a class="ql-card" href="/pipeline.html"><div class="ql-icon">◐</div><div class="ql-name">Pipeline</div><div class="ql-sub">Deal tracker</div></a>
+    <a class="ql-card" href="/risk.html"><div class="ql-icon">◉</div><div class="ql-name">Risk Check</div><div class="ql-sub">Full due diligence</div></a>
+    <a class="ql-card" href="/calculators.html"><div class="ql-icon">◑</div><div class="ql-name">Calculators</div><div class="ql-sub">Yield · SDLT · Bridging</div></a>
+    <a class="ql-card" href="/sourcing.html"><div class="ql-icon">🔍</div><div class="ql-name">Sourcing</div><div class="ql-sub">All lead sources</div></a>
+    <a class="ql-card" href="/disposals.html"><div class="ql-icon">🏛️</div><div class="ql-name">Disposals</div><div class="ql-sub">Council · NHS · Uni</div></a>
+    <a class="ql-card" href="/analyser.html"><div class="ql-icon">🤖</div><div class="ql-name">AI Analyser</div><div class="ql-sub">Deal verdict</div></a>
+    <a class="ql-card" href="/auctions.html"><div class="ql-icon">🔨</div><div class="ql-name">Auctions</div><div class="ql-sub">Yorkshire calendar</div></a>
+    <a class="ql-card" href="/portfolio.html"><div class="ql-icon">◈</div><div class="ql-name">Portfolio</div><div class="ql-sub">Track your properties</div></a>
+    <a class="ql-card" href="/outreach.html"><div class="ql-icon">✉️</div><div class="ql-name">Outreach</div><div class="ql-sub">AI letters</div></a>
+  </div>
+
+  <!-- 3 COLUMN PANELS -->
+  <div class="grid-3" style="margin-top:4px">
+
+    <!-- NEWS -->
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-title">📰 Market News</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="badge b-muted" id="news-count">Loading...</span>
+          <a href="/news.html" class="section-action">All →</a>
+        </div>
+      </div>
+      <div class="card-body" id="news-list">
+        <div class="skeleton" style="height:60px;margin-bottom:8px"></div>
+        <div class="skeleton" style="height:60px;margin-bottom:8px"></div>
+        <div class="skeleton" style="height:60px"></div>
+      </div>
+    </div>
+
+    <!-- EPC -->
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-title">⚡ EPC Leads — LS7</div>
+        <a href="/epc.html" class="section-action">All →</a>
+      </div>
+      <div class="card-body" id="epc-list">
+        <div class="skeleton" style="height:52px;margin-bottom:8px"></div>
+        <div class="skeleton" style="height:52px;margin-bottom:8px"></div>
+        <div class="skeleton" style="height:52px"></div>
+      </div>
+    </div>
+
+    <!-- INSOLVENCY -->
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-title">⚠️ Insolvency — Leeds</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="badge b-amber" id="insol-count">Loading...</span>
+          <a href="/sourcing.html" class="section-action">All →</a>
+        </div>
+      </div>
+      <div class="card-body" id="insol-list">
+        <div class="skeleton" style="height:70px;margin-bottom:8px"></div>
+        <div class="skeleton" style="height:70px;margin-bottom:8px"></div>
+        <div class="skeleton" style="height:70px"></div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+function setActiveNav() {
+  var path = window.location.pathname.split('/').pop() || 'index.html';
+  document.querySelectorAll('.nav-link').forEach(function(a) {
+    var href = a.getAttribute('href').split('/').pop();
+    if (href === path || (path === '' && href === 'index.html')) {
+      a.classList.add('active');
+    }
+  });
+}
+function toggleNav() {
+  var links = document.getElementById('nav-links');
+  var btn   = document.getElementById('hamburger');
+  links.classList.toggle('open');
+  btn.textContent = links.classList.contains('open') ? '✕' : '☰';
+}
+document.addEventListener('click', function(e) {
+  var nav = document.getElementById('nav-links');
+  var btn = document.getElementById('hamburger');
+  if (nav && btn && !nav.contains(e.target) && !btn.contains(e.target)) {
+    nav.classList.remove('open');
+    btn.textContent = '☰';
+  }
+});
+setActiveNav();
+</script>
+
+async function loadDashboard() {
+  // Load sentiment
+  try {
+    const r = await fetch('/api/sentiment');
+    const d = await r.json();
+    if (d.score) {
+      document.getElementById('sent-score').textContent = d.score;
+      document.getElementById('sent-verdict').textContent = (d.colourBand==='green'?'✅':d.colourBand==='amber'?'⚠️':'🔴') + ' ' + (d.verdict||'Cautious') + ' — ' + (d.headline||'');
+      document.getElementById('sent-desc').textContent = d.recommendation || d.headline || '';
+      const offset = 188 - (d.score/100)*188;
+      document.getElementById('sent-arc').setAttribute('stroke-dashoffset', offset);
+      document.getElementById('sent-arc').setAttribute('stroke', d.colourBand==='green'?'#22c55e':d.colourBand==='red'?'#ef4444':'#f59e0b');
+    }
+  } catch(e) {}
+
+  // Load news preview
+  try {
+    const r = await fetch('/api/news');
+    const d = await r.json();
+    const items = (d.news||[]).slice(0,4);
+    const colours = {good:'#22c55e', bad:'#ef4444', neutral:'#8890aa'};
+    const tagCls  = {good:'b-green',  bad:'b-red',    neutral:'b-muted'};
+    document.getElementById('news-list').innerHTML = items.map(item =>
+      '<div class="news-item" onclick="window.open(\'' + (item.link||'#') + '\',\'_blank\')">'+
+      '<div class="news-dot" style="background:' + (colours[item.sentiment]||'#8890aa') + '"></div>'+
+      '<div class="news-body">'+
+      '<div class="news-source">' + item.source + '</div>'+
+      '<div class="news-title">' + item.title + '</div>'+
+      (item.summary?'<div class="news-summary">'+item.summary+'</div>':'')+
+      '<div class="news-meta">' + (item.dateFormatted||'') + '</div>'+
+      '</div>'+
+      '<div class="news-tag badge ' + (tagCls[item.sentiment]||'b-muted') + '">' + (item.sentiment==='good'?'Good':item.sentiment==='bad'?'Watch':'Note') + '</div>'+
+      '</div>'
+    ).join('');
+    document.getElementById('news-count').textContent = (d.count||0) + ' stories';
+  } catch(e) {
+    document.getElementById('news-list').innerHTML = '<div style="color:var(--muted);font-size:13px;padding:12px 0">News feed unavailable — check /api/news is deployed.</div>';
+  }
+
+  // Load EPC preview
+  try {
+    const r = await fetch('/api/epc?postcode=LS7&filter=poor&limit=4');
+    const d = await r.json();
+    const grades = {G:'eg-g',F:'eg-f',E:'eg-e'};
+    document.getElementById('epc-list').innerHTML = (d.properties||d.data||[]).slice(0,4).map(p =>
+      '<div class="epc-item" onclick="window.location=\'/epc.html\'">'+
+      '<div class="epc-grade ' + (grades[p.currentEnergyRating||p.rating]||'eg-f') + '">' + (p.currentEnergyRating||p.rating||'F') + '</div>'+
+      '<div><div class="epc-addr">' + (p.address||p['address1']||'Address not available') + '</div>'+
+      '<div class="epc-meta">' + (p.propertyType||'') + (p.tenureType?' · '+p.tenureType:'') + '</div></div>'+
+      '</div>'
+    ).join('') || '<div style="color:var(--muted);font-size:13px;padding:12px 0">Load EPC Finder to see motivated sellers.</div>';
+  } catch(e) {}
+
+  // Load insolvency preview
+  try {
+    const r = await fetch('/api/insolvency?region=leeds');
+    const d = await r.json();
+    const items = (d.data||[]).filter(i=>i.priority==='high').slice(0,3);
+    document.getElementById('insol-list').innerHTML = items.map(item =>
+      '<div class="insol-item" onclick="window.open(\'' + (item.link||'#') + '\',\'_blank\')">'+
+      '<div class="insol-top"><div class="insol-name">' + item.title + '</div>'+
+      '<span class="badge b-amber">' + (item.noticeType||item.category||'Insolvency') + '</span></div>'+
+      '<div class="insol-desc">' + (item.description||'').substring(0,120) + '</div>'+
+      '<div class="insol-date">' + (item.date||'') + '</div>'+
+      '</div>'
+    ).join('') || '<div style="color:var(--muted);font-size:13px;padding:12px 0">No high-priority insolvency notices found for Leeds today.</div>';
+    document.getElementById('insol-count').textContent = (d.count||0) + ' notices';
+  } catch(e) {}
+}
+loadDashboard();
+
+</body>
+</html>
